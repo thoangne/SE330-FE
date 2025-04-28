@@ -1,6 +1,21 @@
+:root {
+  /* Primary button color */
+  --color-primary: #c92127;
+
+  /* Main text color */
+  --color-text-main: #000000;
+
+  /* Secondary (sub) text color */
+  --color-text-sub: #969696;
+
+  /* Background color */
+  --color-background: #f0f0f0;
+}
+
 body {
-  font-family: "Roboto", sans-serif;
-  background-color: #f8f9fa;
+  font-family: "Be Vietnam Pro", sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-primary);
   margin: 0;
   padding: 0;
 }
