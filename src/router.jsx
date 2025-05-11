@@ -1,7 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Cart from "./pages/Cart";
-
+import LoginRegisterForm from "./pages/User/Authentication/LoginRegisterForm";
 /* // Import các page mới
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
@@ -35,9 +35,7 @@ function Router() {
       <Route path="/checkout" element={<CheckoutPage />} /> */}
 
       {/* Auth Routes */}
-      {/*       <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} /> */}
+      <Route path="/login" element={<LoginRegisterForm />} />
 
       {/* User Routes */}
       {/*      <Route path="/user/profile" element={<ProfilePage />} />
