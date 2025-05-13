@@ -2,10 +2,11 @@ import { Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Cart from "./pages/Cart";
 import LoginRegisterForm from "./pages/User/Authentication/LoginRegisterForm";
+import ForgotPassword from "./pages/User/ForgotPassword/ForgotPassword";
+
 /* // Import các page mới
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
-import ForgotPassword from "./pages/auth/ForgotPassword";
 
 import CategoryPage from "./pages/CategoryPage";
 import ProductDetailPage from "./pages/ProductDetailPage";
@@ -36,6 +37,7 @@ function Router() {
 
       {/* Auth Routes */}
       <Route path="/login" element={<LoginRegisterForm />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
 
       {/* User Routes */}
       {/*      <Route path="/user/profile" element={<ProfilePage />} />
