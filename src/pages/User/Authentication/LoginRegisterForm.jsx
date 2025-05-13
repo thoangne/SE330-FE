@@ -13,6 +13,48 @@ import "./LoginRegisterForm.css";
 function LoginForm() {
   const [key, setKey] = useState("login");
   const [showPassword, setShowPassword] = useState(false);
+  const [loginData, setLoginData] = useState({ email: "", password: "" });
+  const [registerData, setRegisterData] = useState({
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [errors, setErrors] = useState({});
+
+  const handleLoginSubmit = (e) => {
+    e.preventDefault();
+    const newErrors = {};
+    if (!loginData.email.trim())
+      newErrors.loginEmail = "Vui lòng nhập email hoặc số điện thoại.";
+    if (!loginData.password)
+      newErrors.loginPassword = "Vui lòng nhập mật khẩu.";
+
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length === 0) {
+      // Submit logic here
+      console.log("Đăng nhập:", loginData);
+    }
+  };
+
+  const handleRegisterSubmit = (e) => {
+    e.preventDefault();
+    const newErrors = {};
+    if (!registerData.email.trim())
+      newErrors.registerEmail = "Vui lòng nhập email hoặc số điện thoại.";
+    if (!registerData.password)
+      newErrors.registerPassword = "Vui lòng nhập mật khẩu.";
+    if (!registerData.confirmPassword) {
+      newErrors.confirmPassword = "Vui lòng xác nhận mật khẩu.";
+    } else if (registerData.password !== registerData.confirmPassword) {
+      newErrors.confirmPassword = "Mật khẩu không khớp.";
+    }
+
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length === 0) {
+      // Submit logic here
+      console.log("Đăng ký:", registerData);
+    }
+  };
 
   return (
     <div className="d-flex justify-content-center align-items-center min-vh-100 bg-light">
@@ -27,18 +69,34 @@ function LoginForm() {
           justify
         >
           <Tab eventKey="login" title="Đăng nhập">
-            <Form>
+            <Form onSubmit={handleLoginSubmit}>
               <Form.Group className="mb-3" controlId="formPhoneOrEmail">
                 <Form.Label>Số điện thoại/Email</Form.Label>
-                <Form.Control type="text" placeholder="Nhập..." />
+                <Form.Control
+                  type="text"
+                  placeholder="Nhập..."
+                  value={loginData.email}
+                  onChange={(e) =>
+                    setLoginData({ ...loginData, email: e.target.value })
+                  }
+                  isInvalid={!!errors.loginEmail}
+                />
+                <Form.Control.Feedback type="invalid">
+                  {errors.loginEmail}
+                </Form.Control.Feedback>
               </Form.Group>
 
               <Form.Group className="mb-2" controlId="formPassword">
                 <Form.Label>Mật khẩu</Form.Label>
-                <InputGroup>
+                <InputGroup hasValidation>
                   <FormControl
                     type={showPassword ? "text" : "password"}
                     placeholder="Nhập mật khẩu"
+                    value={loginData.password}
+                    onChange={(e) =>
+                      setLoginData({ ...loginData, password: e.target.value })
+                    }
+                    isInvalid={!!errors.loginPassword}
                   />
                   <Button
                     variant="outline-secondary"
@@ -47,6 +105,9 @@ function LoginForm() {
                   >
                     {showPassword ? "Ẩn" : "Hiện"}
                   </Button>
+                  <Form.Control.Feedback type="invalid">
+                    {errors.loginPassword}
+                  </Form.Control.Feedback>
                 </InputGroup>
               </Form.Group>
 
@@ -87,18 +148,37 @@ function LoginForm() {
           </Tab>
 
           <Tab eventKey="register" title="Đăng ký">
-            <Form>
+            <Form onSubmit={handleRegisterSubmit}>
               <Form.Group className="mb-3" controlId="formPhoneOrEmail">
                 <Form.Label>Số điện thoại/Email</Form.Label>
-                <Form.Control type="text" placeholder="Nhập..." />
+                <Form.Control
+                  type="text"
+                  placeholder="Nhập..."
+                  value={registerData.email}
+                  onChange={(e) =>
+                    setRegisterData({ ...registerData, email: e.target.value })
+                  }
+                  isInvalid={!!errors.registerEmail}
+                />
+                <Form.Control.Feedback type="invalid">
+                  {errors.registerEmail}
+                </Form.Control.Feedback>
               </Form.Group>
 
               <Form.Group className="mb-2" controlId="formPassword">
                 <Form.Label>Mật khẩu</Form.Label>
-                <InputGroup>
+                <InputGroup hasValidation>
                   <FormControl
                     type={showPassword ? "text" : "password"}
                     placeholder="Nhập mật khẩu"
+                    value={registerData.password}
+                    onChange={(e) =>
+                      setRegisterData({
+                        ...registerData,
+                        password: e.target.value,
+                      })
+                    }
+                    isInvalid={!!errors.registerPassword}
                   />
                   <Button
                     variant="outline-secondary"
@@ -107,15 +187,26 @@ function LoginForm() {
                   >
                     {showPassword ? "Ẩn" : "Hiện"}
                   </Button>
+                  <Form.Control.Feedback type="invalid">
+                    {errors.registerPassword}
+                  </Form.Control.Feedback>
                 </InputGroup>
               </Form.Group>
 
               <Form.Group className="mb-3" controlId="formConfirmPassword">
                 <Form.Label>Xác nhận mật khẩu</Form.Label>
-                <InputGroup>
+                <InputGroup hasValidation>
                   <FormControl
                     type={showPassword ? "text" : "password"}
                     placeholder="Nhập lại mật khẩu"
+                    value={registerData.confirmPassword}
+                    onChange={(e) =>
+                      setRegisterData({
+                        ...registerData,
+                        confirmPassword: e.target.value,
+                      })
+                    }
+                    isInvalid={!!errors.confirmPassword}
                   />
                   <Button
                     variant="outline-secondary"
@@ -124,13 +215,16 @@ function LoginForm() {
                   >
                     {showPassword ? "Ẩn" : "Hiện"}
                   </Button>
+                  <Form.Control.Feedback type="invalid">
+                    {errors.confirmPassword}
+                  </Form.Control.Feedback>
                 </InputGroup>
               </Form.Group>
 
               <Button
                 variant="danger"
                 type="submit"
-                className="w-100  rounded-pill mb-3 "
+                className="w-100 rounded-pill mb-3"
               >
                 Đăng ký
               </Button>
