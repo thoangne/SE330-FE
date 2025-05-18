@@ -1,15 +1,26 @@
+
+import { Routes, Route, useLocation } from "react-router-dom";
+
 import { useLocation } from "react-router-dom";
 import { Routes, Route } from "react-router-dom";
+
 
 // Pages
 import Home from "./pages/Home";
 import LoginRegisterForm from "./pages/User/Authentication/LoginRegisterForm";
+
+import ForgotPassword from "./pages/User/ForgotPassword/ForgotPassword";
 import AdminDashboard from "./pages/Admin/Dashboard/AdminDashboard";
+
+// Components
 import Header from "./components/Header";
 import Footer from "./components/Footer";
-import ForgotPassword from "./pages/User/ForgotPassword/ForgotPassword";
-import Navbar from "./pages/Admin/Dashboard/components/Navbar";
-import Sidebar from "./pages/Admin/Dashboard/components/Sidebar";
+
+// Layout
+import AdminLayout from "./components/AdminLayout";
+import BooksManager from "./pages/Admin/BooksManager/BooksManager";
+
+
 function App() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith("/admin");
@@ -17,6 +28,15 @@ function App() {
   return (
     <>
       {isAdminRoute ? (
+ ADMIN]-dashboard
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="books" element={<BooksManager />} />
+          </Route>
+        </Routes>
+      ) : (
+
         // Admin Layout
         <div className="wrapper">
           <Navbar />

@@ -1,3 +1,15 @@
+
+import { Container, Row, Col } from "react-bootstrap";
+import Stats from "./components/Stats";
+import GraphOnlineUsers from "./components/GraphOnlineUsers";
+
+const AdminDashboard = () => {
+  return (
+    <>
+      <Stats />
+      <GraphOnlineUsers />
+    </>
+
 // TopNavbar.js
 import TopNavbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
@@ -10,6 +22,7 @@ const AdminDashboard = () => {
       <Sidebar />
       <MainContent />
     </div>
+
   );
 };
 
