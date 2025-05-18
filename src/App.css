@@ -40,3 +40,63 @@
 .read-the-docs {
   color: #888;
 }
+/* Dark mode cho toàn bộ body */
+body.dark-mode {
+  background-color: #121212;
+  color: #e0e0e0;
+}
+
+/* Override nền cho các container */
+body.dark-mode .bg-light {
+  background-color: #1e1e1e !important;
+}
+body.dark-mode .bg-white {
+  background-color: #1e1e1e !important;
+}
+
+/* Card, Nav, Sidebar… */
+body.dark-mode .card,
+body.dark-mode .navbar,
+body.dark-mode .nav,
+body.dark-mode .sidebar {
+  background-color: #1e1e1e !important;
+  color: #e0e0e0;
+}
+
+/* Link và text */
+body.dark-mode a,
+body.dark-mode .nav-link,
+body.dark-mode .breadcrumb a {
+  color: #90caf9 !important;
+}
+body.dark-mode .nav-link.active {
+  color: #ffffff !important;
+}
+
+/* Table, form control… */
+body.dark-mode .table,
+body.dark-mode .form-control {
+  background-color: #2a2a2a;
+  color: #e0e0e0;
+  border-color: #444;
+}
+
+/* Thanh cuộn (Chrome) */
+body.dark-mode ::-webkit-scrollbar-thumb {
+  background-color: #444;
+}
+/* Dark mode chỉ áp dụng cho vùng .content-area */
+.content-area.dark-mode {
+  background-color: #1e1e1e;
+  color: #eee;
+}
+
+/* Override cho các thành phần con bên trong nếu cần */
+.content-area.dark-mode .card {
+  background-color: #2a2a2a;
+  color: #fff;
+}
+.content-area.dark-mode .table {
+  background-color: #2a2a2a;
+  color: #fff;
+}
