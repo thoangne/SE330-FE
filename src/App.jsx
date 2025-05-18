@@ -1,8 +1,3 @@
-<<<<<<< Updated upstream
-import Header from "./components/Header";
-import Footer from "./components/Footer";
-import Router from "./router";
-=======
 import { Routes, Route, useLocation } from "react-router-dom";
 
 // Pages
@@ -22,18 +17,9 @@ import BooksManager from "./pages/Admin/BooksManager/BooksManager";
 function App() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith("/admin");
->>>>>>> Stashed changes
 
-function App() {
   return (
     <>
-<<<<<<< Updated upstream
-      <Header />
-      <main style={{ minHeight: "80vh" }}>
-        <Router />
-      </main>
-      <Footer />
-=======
       {isAdminRoute ? (
         <Routes>
           <Route path="/admin" element={<AdminLayout />}>
@@ -54,7 +40,6 @@ function App() {
           <Footer />
         </>
       )}
->>>>>>> Stashed changes
     </>
   );
 }
