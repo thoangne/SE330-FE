@@ -1,9 +1,4 @@
-
 import { Routes, Route, useLocation } from "react-router-dom";
-
-import { useLocation } from "react-router-dom";
-import { Routes, Route } from "react-router-dom";
-
 
 // Pages
 import Home from "./pages/Home";
@@ -20,7 +15,6 @@ import Footer from "./components/Footer";
 import AdminLayout from "./components/AdminLayout";
 import BooksManager from "./pages/Admin/BooksManager/BooksManager";
 
-
 function App() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith("/admin");
@@ -28,25 +22,12 @@ function App() {
   return (
     <>
       {isAdminRoute ? (
- ADMIN]-dashboard
         <Routes>
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
             <Route path="books" element={<BooksManager />} />
           </Route>
         </Routes>
-      ) : (
-
-        // Admin Layout
-        <div className="wrapper">
-          <Navbar />
-          <Sidebar />
-          <div className="content-wrapper">
-            <Routes>
-              <Route path="/admin" element={<AdminDashboard />} />
-            </Routes>
-          </div>
-        </div>
       ) : (
         // User Layout
         <>
