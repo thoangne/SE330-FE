@@ -1,15 +1,15 @@
 import { Routes, Route, useLocation } from "react-router-dom";
 
 // Pages
-import Home from "./pages/Home";
+import Home from "./pages/Home/Home";
 import LoginRegisterForm from "./pages/User/Authentication/LoginRegisterForm";
 
 import ForgotPassword from "./pages/User/ForgotPassword/ForgotPassword";
 import AdminDashboard from "./pages/Admin/Dashboard/AdminDashboard";
 
 // Components
-import Header from "./components/Header";
-import Footer from "./components/Footer";
+import Header from "./components/Header/Header";
+import Footer from "./components/Footer/Footer";
 
 // Layout
 import AdminLayout from "./components/AdminLayout";
