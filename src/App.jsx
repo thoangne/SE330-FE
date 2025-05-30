@@ -14,6 +14,7 @@ import Footer from "./components/Footer/Footer";
 // Layout
 import AdminLayout from "./components/AdminLayout";
 import BooksManager from "./pages/Admin/BooksManager/BooksManager";
+import UsersManager from "./pages/Admin/UsersManger/UsersManager";
 
 function App() {
   const location = useLocation();
@@ -26,6 +27,7 @@ function App() {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
             <Route path="books" element={<BooksManager />} />
+            <Route path="users" element={<UsersManager />} />
           </Route>
         </Routes>
       ) : (
