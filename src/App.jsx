@@ -6,6 +6,7 @@ import LoginRegisterForm from "./pages/User/Authentication/LoginRegisterForm";
 
 import ForgotPassword from "./pages/User/ForgotPassword/ForgotPassword";
 import AdminDashboard from "./pages/Admin/Dashboard/AdminDashboard";
+import NotFound from "./pages/NotFound/NotFound";
 
 // Components
 import Header from "./components/Header/Header";
@@ -28,6 +29,7 @@ function App() {
             <Route index element={<AdminDashboard />} />
             <Route path="books" element={<BooksManager />} />
             <Route path="users" element={<UsersManager />} />
+             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
       ) : (
@@ -38,7 +40,8 @@ function App() {
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<LoginRegisterForm />} />
-              <Route path="/forgotpassword" element={<ForgotPassword />} />
+                <Route path="/forgotpassword" element={<ForgotPassword />} />
+                 <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
           <Footer />
