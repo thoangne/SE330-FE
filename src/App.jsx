@@ -1,5 +1,5 @@
 import { Routes, Route, useLocation } from "react-router-dom";
-
+import { Toaster } from "react-hot-toast";
 // Pages
 import Home from "./pages/Home";
 import LoginRegisterForm from "./pages/User/Authentication/LoginRegisterForm";
@@ -15,6 +15,9 @@ import Footer from "./components/Footer";
 import AdminLayout from "./components/AdminLayout";
 import BooksManager from "./pages/Admin/BooksManager/BooksManager";
 import UsersManager from "./pages/Admin/UsersManger/UsersManager";
+import AuthorManager from "./pages/Admin/Author/AuthorManager";
+import OrdersManager from "./pages/Admin/Order/OrdersManager";
+import NotFoundPage from "./pages/NotFoundPage/NotFoundPage";
 
 function App() {
   const location = useLocation();
@@ -28,6 +31,11 @@ function App() {
             <Route index element={<AdminDashboard />} />
             <Route path="books" element={<BooksManager />} />
             <Route path="users" element={<UsersManager />} />
+            <Route path="authors" element={<AuthorManager />} />
+            <Route path="orders" element={<OrdersManager />} />
+            {/* Trang 404 */}
+
+            <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>
       ) : (
@@ -39,11 +47,16 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<LoginRegisterForm />} />
               <Route path="/forgotpassword" element={<ForgotPassword />} />
+              {/* Trang 404 */}
+
+              <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </main>
           <Footer />
         </>
       )}
+      <Toaster position="top-right" reverseOrder={false} />
+      {/* Trang 404 */}
     </>
   );
 }
