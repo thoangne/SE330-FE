@@ -9,6 +9,7 @@ import {
 } from "react-bootstrap";
 import { FaGoogle, FaFacebookF } from "react-icons/fa";
 import "./LoginRegisterForm.css";
+import { useAuthStore } from "../../../stores/useAuthStore";
 
 function LoginForm() {
   const [key, setKey] = useState("login");
@@ -19,6 +20,7 @@ function LoginForm() {
     password: "",
     confirmPassword: "",
   });
+  const { Register, isLoading, error } = useAuthStore();
   const [errors, setErrors] = useState({});
 
   const handleLoginSubmit = (e) => {
@@ -31,7 +33,6 @@ function LoginForm() {
 
     setErrors(newErrors);
     if (Object.keys(newErrors).length === 0) {
-      // Submit logic here
       console.log("Đăng nhập:", loginData);
     }
   };
@@ -48,10 +49,13 @@ function LoginForm() {
     } else if (registerData.password !== registerData.confirmPassword) {
       newErrors.confirmPassword = "Mật khẩu không khớp.";
     }
-
     setErrors(newErrors);
+    const newRegisterData = {
+      email: registerData.email,
+      password: registerData.password,
+    };
     if (Object.keys(newErrors).length === 0) {
-      // Submit logic here
+      Register(newRegisterData);
       console.log("Đăng ký:", registerData);
     }
   };
