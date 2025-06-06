@@ -1,5 +1,5 @@
 // components/Header.jsx
-import React from "react";
+import React, { useState } from "react";
 import {
   Navbar,
   Nav,
@@ -10,14 +10,26 @@ import {
   NavDropdown,
 } from "react-bootstrap";
 import { FaUser, FaShoppingCart, FaSearch } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 function Header() {
+  const navigate = useNavigate();
+
+  // Tạm thời giả lập user login (null là chưa đăng nhập)
+  const [user, setUser] = useState(null); // ví dụ: { name: "Nguyen Van A" }
+
+  const handleLogout = () => {
+    // Xử lý đăng xuất
+    setUser(null);
+    navigate("/");
+  };
+
   return (
     <Navbar bg="white" expand="lg" className="shadow-sm">
       <Container>
         <Navbar.Brand href="/">
           <img
-            src="/public/vite.svg" // Đặt logo vào thư mục public
+            src="/vite.svg"
             width="120"
             height="40"
             alt="Fahasa Clone"
@@ -41,9 +53,41 @@ function Header() {
             </Button>
           </Form>
           <Nav>
-            <Nav.Link href="/account">
-              <FaUser /> Tài khoản
-            </Nav.Link>
+            <NavDropdown
+              title={
+                <span>
+                  <FaUser /> Tài khoản
+                </span>
+              }
+              id="account-dropdown"
+              align="end"
+              className=""
+            >
+              {!user ? (
+                <>
+                  <NavDropdown.Item onClick={() => navigate("/login")}>
+                    Đăng nhập
+                  </NavDropdown.Item>
+                  <NavDropdown.Item onClick={() => navigate("/login")}>
+                    Đăng ký
+                  </NavDropdown.Item>
+                </>
+              ) : (
+                <>
+                  <NavDropdown.Item onClick={() => navigate("/profile")}>
+                    {user.name}
+                  </NavDropdown.Item>
+                  <NavDropdown.Item onClick={() => navigate("/orders")}>
+                    Đơn hàng của tôi
+                  </NavDropdown.Item>
+                  <NavDropdown.Divider />
+                  <NavDropdown.Item onClick={handleLogout}>
+                    Đăng xuất
+                  </NavDropdown.Item>
+                </>
+              )}
+            </NavDropdown>
+
             <Nav.Link href="/cart">
               <FaShoppingCart /> Giỏ hàng
             </Nav.Link>

@@ -6,7 +6,7 @@ import LoginRegisterForm from "./pages/User/Authentication/LoginRegisterForm";
 
 import ForgotPassword from "./pages/User/ForgotPassword/ForgotPassword";
 import AdminDashboard from "./pages/Admin/Dashboard/AdminDashboard";
-import NotFound from "./pages/NotFound/NotFound";
+
 
 // Components
 import Header from "./components/Header/Header";
@@ -19,6 +19,9 @@ import UsersManager from "./pages/Admin/UsersManger/UsersManager";
 import AuthorManager from "./pages/Admin/Author/AuthorManager";
 import OrdersManager from "./pages/Admin/Order/OrdersManager";
 import NotFoundPage from "./pages/NotFoundPage/NotFoundPage";
+import ProductDetail from "./pages/Home/components/ProductDetail/ProductDetail";
+import CartPage from "./pages/Home/components/CartPage/CartPage";
+import CheckoutPage from "./pages/Home/components/CheckoutPage/CheckoutPage";
 
 function App() {
   const location = useLocation();
@@ -47,7 +50,10 @@ function App() {
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<LoginRegisterForm />} />
-              <Route path="/forgotpassword" element={<ForgotPassword />} />
+                <Route path="/forgotpassword" element={<ForgotPassword />} />
+                <Route path="/product/:id" element={<ProductDetail />} />
+              <Route path="/cart" element={<CartPage />} />
+              <Route path="/checkout" element={<CheckoutPage />} />
               {/* Trang 404 */}
 
               <Route path="*" element={<NotFoundPage />} />
