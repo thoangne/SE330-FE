@@ -9,13 +9,13 @@ function CartPage() {
 
         console.log(cartItems);
     return (
-    <Container className="my-4">
+    <Container className="my-4" style={{ background: "#fff", borderRadius: "8px",padding:"16px", boxShadow: "0 4px 16px rgba(0,0,0,0.15)" }}>
       <h3>Giỏ hàng</h3>
       {cartItems.length === 0 ? (
         <p>Giỏ hàng trống</p>
       ) : (
         <>
-          <Table responsive>
+          <Table responsive className="align-middle">
             <thead>
               <tr>
                 <th>Sản phẩm</th>

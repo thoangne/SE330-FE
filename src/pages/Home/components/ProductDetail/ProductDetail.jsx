@@ -15,7 +15,7 @@ function ProductDetail() {
   if (!product) return <p>Không tìm thấy sản phẩm</p>;
 
   return (
-    <Container className="my-4">
+    <Container className="my-4" style={{ background: "#fff", borderRadius: "8px",padding:"16px", boxShadow: "0 4px 16px rgba(0,0,0,0.15)" }}>
       <Row>
         <Col md={5}>
           <Image src={product.image} alt={product.name} fluid />
