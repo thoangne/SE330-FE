@@ -14,7 +14,7 @@ import { useNavigate } from "react-router-dom";
 
 function Header() {
   const navigate = useNavigate();
-
+const [keyword, setKeyword] = useState("");
   // Tạm thời giả lập user login (null là chưa đăng nhập)
   const [user, setUser] = useState(null); // ví dụ: { name: "Nguyen Van A" }
 
@@ -23,7 +23,13 @@ function Header() {
     setUser(null);
     navigate("/");
   };
-
+const handleSearch = (e) => {
+    e.preventDefault();
+    if (keyword.trim()) {
+      navigate(`/search/${keyword.trim()}`);
+      setKeyword("");
+    }
+  };
   return (
     <Navbar bg="white" expand="lg" className="shadow-sm">
       <Container>
@@ -37,14 +43,17 @@ function Header() {
         </Navbar.Brand>
         <Navbar.Toggle aria-controls="fahasa-navbar" />
         <Navbar.Collapse id="fahasa-navbar">
-          <Form className="d-flex mx-auto w-50">
+          <Form className="d-flex mx-auto w-50" onSubmit={handleSearch}>
             <FormControl
               type="search"
               placeholder="Tìm kiếm sách, văn phòng phẩm..."
               className="me-2"
               aria-label="Search"
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
             />
             <Button
+              type="submit"
               variant="outline-danger"
               size="md"
               style={{ padding: "8px 32px" }}

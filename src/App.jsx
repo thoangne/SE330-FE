@@ -22,6 +22,7 @@ import NotFoundPage from "./pages/NotFoundPage/NotFoundPage";
 import ProductDetail from "./pages/Home/components/ProductDetail/ProductDetail";
 import CartPage from "./pages/Home/components/CartPage/CartPage";
 import CheckoutPage from "./pages/Home/components/CheckoutPage/CheckoutPage";
+import SearchResult from "./pages/Home/components/SearchResult/SearchResult";
 
 function App() {
   const location = useLocation();
@@ -53,7 +54,8 @@ function App() {
                 <Route path="/forgotpassword" element={<ForgotPassword />} />
                 <Route path="/product/:id" element={<ProductDetail />} />
               <Route path="/cart" element={<CartPage />} />
-              <Route path="/checkout" element={<CheckoutPage />} />
+                <Route path="/checkout" element={<CheckoutPage />} />
+                <Route path="/search/:keyword" element={<SearchResult />} />
               {/* Trang 404 */}
 
               <Route path="*" element={<NotFoundPage />} />
