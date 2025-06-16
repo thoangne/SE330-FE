@@ -3,10 +3,10 @@ import { Toaster } from "react-hot-toast";
 // Pages
 import Home from "./pages/Home/Home";
 import LoginRegisterForm from "./pages/User/Authentication/LoginRegisterForm";
+import Profile from "./pages/User/Profile/Profile";
 
 import ForgotPassword from "./pages/User/ForgotPassword/ForgotPassword";
 import AdminDashboard from "./pages/Admin/Dashboard/AdminDashboard";
-
 
 // Components
 import Header from "./components/Header/Header";
@@ -51,11 +51,12 @@ function App() {
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<LoginRegisterForm />} />
-                <Route path="/forgotpassword" element={<ForgotPassword />} />
-                <Route path="/product/:id" element={<ProductDetail />} />
+              <Route path="/forgotpassword" element={<ForgotPassword />} />
+              <Route path="/product/:id" element={<ProductDetail />} />
               <Route path="/cart" element={<CartPage />} />
-                <Route path="/checkout" element={<CheckoutPage />} />
-                <Route path="/search/:keyword" element={<SearchResult />} />
+              <Route path="/checkout" element={<CheckoutPage />} />
+              <Route path="/search/:keyword" element={<SearchResult />} />
+              <Route path="/profile" element={<Profile />} />
               {/* Trang 404 */}
 
               <Route path="*" element={<NotFoundPage />} />
