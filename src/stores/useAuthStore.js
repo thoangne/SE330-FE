@@ -1,53 +1,64 @@
-import toast from "react-hot-toast";
-import axiosInstance from "../lib/axiosInstance";
 import { create } from "zustand";
-export const useAuthStore = create((set) => ({
-  //   isAdmin: false,
-  isLoading: false,
-  error: null,
-  User: null,
+import { persist, createJSONStorage } from "zustand/middleware";
+import { toast } from "react-hot-toast";
 
-  //   checkAdminStatus: async () => {
-  //     set({ isLoading: true, error: null });
-  //     try {
-  //       const response = await AxiosInstance.get("/admin/check");
-  //       console.log(response, "response");
-  //       set({ isAdmin: response.data.admin });
-  //     } catch (error) {
-  //       set({ isAdmin: false, error: error.response.data.message });
-  //     } finally {
-  //       set({ isLoading: false });
-  //     }
-  //   },
-  Register: async (data) => {
-    set({ isLoading: true, error: null });
-    try {
-      toast.warn("Đang gửi yêu cầu");
-      const response = await axiosInstance.post("/users", data);
-      toast.success("Đăng ký thành công");
-      console.log(response, "response");
-    } catch (error) {
-      set({ error: error });
-      toast.error("Đăng ký thất bại");
-    } finally {
-      set({ isLoading: false });
+// Simplified version for testing
+export const useAuthStore = create(
+  persist(
+    (set) => ({
+      user: null,
+      isLoading: false,
+      error: null,
+      isAuthenticated: false,
+
+      login: async (email, password) => {
+        set({ isLoading: true, error: null });
+        try {
+          // Mock login for testing
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+
+          if (email === "test@example.com" && password === "password123") {
+            const mockUser = {
+              id: 1,
+              email,
+              name: "Test User",
+            };
+            localStorage.setItem("accessToken", "mock-token");
+            set({ user: mockUser, isAuthenticated: true });
+            toast.success("Đăng nhập thành công");
+            return { success: true };
+          }
+
+          set({ error: "Email hoặc mật khẩu không đúng" });
+          toast.error("Email hoặc mật khẩu không đúng");
+          return { success: false, message: "Email hoặc mật khẩu không đúng" };
+        } catch {
+          set({ error: "Đăng nhập thất bại" });
+          toast.error("Đăng nhập thất bại");
+          return { success: false, message: "Đăng nhập thất bại" };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      logout: () => {
+        localStorage.removeItem("accessToken");
+        set({ user: null, isAuthenticated: false, error: null });
+        toast.success("Đăng xuất thành công");
+      },
+      clearError: () => set({ error: null }),
+
+      // Initialize from localStorage
+      initFromStorage: () => {
+        const token = localStorage.getItem("accessToken");
+        if (token) {
+          set({ isAuthenticated: true });
+        }
+      },
+    }),
+    {
+      name: "auth-store",
+      storage: createJSONStorage(() => localStorage),
     }
-  },
-  Login: async (data) => {
-    set({ isLoading: true, error: null });
-    try {
-      toast.warn("Đang gửi yêu cầu");
-      const response = await axiosInstance.post("/users", data);
-      toast.success("Đăng nhập thành cong");
-      console.log(response, "response");
-    } catch (error) {
-      set({ error: error });
-      toast.error("Đăng nhập thất bại");
-    } finally {
-      set({ isLoading: false });
-    }
-  },
-  //   reset: () => {
-  //     set({ isAdmin: false, isLoading: false, error: null });
-  //   },
-}));
+  )
+);

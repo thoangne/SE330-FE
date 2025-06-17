@@ -1,12 +1,14 @@
 import { Routes, Route, useLocation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
+import { RequireAuth, RequireUnauth } from "./components/Auth/AuthGuard";
+import { AuthProvider } from "./components/Auth/AuthProvider";
 // Pages
 import Home from "./pages/Home/Home";
 import LoginRegisterForm from "./pages/User/Authentication/LoginRegisterForm";
 import Profile from "./pages/User/Profile/Profile";
-
 import ForgotPassword from "./pages/User/ForgotPassword/ForgotPassword";
 import AdminDashboard from "./pages/Admin/Dashboard/AdminDashboard";
+import DetailSearch from "./pages/Home/components/DetailSearch/DetailSearch";
 
 // Components
 import Header from "./components/Header/Header";
@@ -29,7 +31,7 @@ function App() {
   const isAdminRoute = location.pathname.startsWith("/admin");
 
   return (
-    <>
+    <AuthProvider>
       {isAdminRoute ? (
         <Routes>
           <Route path="/admin" element={<AdminLayout />}>
@@ -38,36 +40,51 @@ function App() {
             <Route path="users" element={<UsersManager />} />
             <Route path="authors" element={<AuthorManager />} />
             <Route path="orders" element={<OrdersManager />} />
-            {/* Trang 404 */}
-
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>
       ) : (
-        // User Layout
         <>
           <Header />
           <main style={{ minHeight: "80vh" }}>
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/login" element={<LoginRegisterForm />} />
-              <Route path="/forgotpassword" element={<ForgotPassword />} />
+              <Route
+                path="/login"
+                element={
+                  <RequireUnauth>
+                    <LoginRegisterForm />
+                  </RequireUnauth>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <RequireAuth>
+                    <Profile />
+                  </RequireAuth>
+                }
+              />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/product/:id" element={<ProductDetail />} />
               <Route path="/cart" element={<CartPage />} />
-              <Route path="/checkout" element={<CheckoutPage />} />
-              <Route path="/search/:keyword" element={<SearchResult />} />
-              <Route path="/profile" element={<Profile />} />
-              {/* Trang 404 */}
-
+              <Route
+                path="/checkout"
+                element={
+                  <RequireAuth>
+                    <CheckoutPage />
+                  </RequireAuth>
+                }
+              />
+              <Route path="/search" element={<DetailSearch />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </main>
           <Footer />
         </>
-      )}
+      )}{" "}
       <Toaster position="top-right" reverseOrder={false} />
-      {/* Trang 404 */}
-    </>
+    </AuthProvider>
   );
 }
 

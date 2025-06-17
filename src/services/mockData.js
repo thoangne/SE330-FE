@@ -1,3 +1,21 @@
+// Mock authentication data
+export const MOCK_USER = {
+  id: 1,
+  email: "test@example.com",
+  password: "password123", 
+  role: "user",
+  username: "thaituan",
+  fullName: "Đặng Thái Tuấn",
+  phone: "0859275070",
+  gender: "Nam",
+  birthday: "2004-09-14",
+  avatar: "https://picsum.photos/100/100",
+  membershipLevel: "Bạc",
+  points: 0,
+};
+
+export const MOCK_TOKEN = "mock-jwt-token-12345";
+
 export const mockUserProfile = {
   id: 1,
   username: "thaituan",
@@ -118,15 +136,15 @@ export const mockWishlist = [
     image: "https://picsum.photos/200/300?random=5",
   },
   {
-    id: 2,
-    name: "Clean Code",
+    id: 6,
+    name: "Clean Architecture",
     price: 250000,
-    image: "https://picsum.photos/200/300",
+    image: "https://picsum.photos/200/300?random=6",
   },
   {
-    id: 3,
-    name: "Design Patterns",
+    id: 7,
+    name: "Test-Driven Development",
     price: 300000,
-    image: "https://picsum.photos/200/300  ",
+    image: "https://picsum.photos/200/300?random=7",
   },
 ];
