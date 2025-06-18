@@ -9,6 +9,7 @@ import Profile from "./pages/User/Profile/Profile";
 import ForgotPassword from "./pages/User/ForgotPassword/ForgotPassword";
 import AdminDashboard from "./pages/Admin/Dashboard/AdminDashboard";
 import DetailSearch from "./pages/Home/components/DetailSearch/DetailSearch";
+import AllProducts from "./pages/Home/components/AllProducts/AllProducts";
 
 // Components
 import Header from "./components/Header/Header";
@@ -24,7 +25,6 @@ import NotFoundPage from "./pages/NotFoundPage/NotFoundPage";
 import ProductDetail from "./pages/Home/components/ProductDetail/ProductDetail";
 import CartPage from "./pages/Home/components/CartPage/CartPage";
 import CheckoutPage from "./pages/Home/components/CheckoutPage/CheckoutPage";
-import SearchResult from "./pages/Home/components/SearchResult/SearchResult";
 
 function App() {
   const location = useLocation();
@@ -77,6 +77,7 @@ function App() {
                 }
               />
               <Route path="/search" element={<DetailSearch />} />
+              <Route path="/products/:type" element={<AllProducts />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </main>

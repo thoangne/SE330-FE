@@ -15,7 +15,7 @@ function Footer() {
             className="d-flex justify-content-center align-items-center"
           >
             <img
-              src="/public/vite.svg" // Đặt logo vào thư mục public
+              src="/vite.svg" 
               width="120"
               alt="Fahasa Clone"
             />

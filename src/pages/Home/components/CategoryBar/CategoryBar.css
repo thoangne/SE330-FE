@@ -1,3 +1,16 @@
-.category-link{
-    color: #c92127 !important;
+.category-bar {
+  width: 100%;
+  margin: 0 auto;
+  padding: 10px 0;
+}
+
+.category-link {
+  color: #c92127 !important;
+  text-decoration: none;
+  padding: 8px 16px;
+  display: inline-block;
+}
+
+.category-link:hover {
+  color: #333 !important;
 }
