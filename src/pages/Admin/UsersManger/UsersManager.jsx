@@ -111,9 +111,8 @@ const UsersManager = () => {
     setBooks(books.map((b) => (b.id === updated.id ? updated : b)));
     setShowEdit(false);
   };
-
   const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this book?")) {
+    if (window.confirm("Bạn có chắc chắn muốn xóa người dùng này?")) {
       setBooks(books.filter((book) => book.id !== id));
     }
   };
@@ -172,14 +171,15 @@ const UsersManager = () => {
   return (
     <Container fluid className="p-0">
       <div className="card shadow-sm border-0">
+        {" "}
         <div className="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
-          <h3 className="card-title mb-0">Users Management</h3>
+          <h3 className="card-title mb-0">Quản lý người dùng</h3>
           <div className="d-flex gap-2">
             <Form className="d-flex" style={{ maxWidth: "300px" }}>
               <InputGroup>
                 <Form.Control
                   type="text"
-                  placeholder="Search by name"
+                  placeholder="Tìm kiếm theo tên"
                   value={searchTerm}
                   onChange={handleSearch}
                 />
@@ -189,7 +189,7 @@ const UsersManager = () => {
               </InputGroup>
             </Form>
             <Button variant="success" onClick={handleAddClick}>
-              <FaPlus /> Add User
+              <FaPlus /> Thêm người dùng
             </Button>
           </div>
         </div>
@@ -261,102 +261,94 @@ const UsersManager = () => {
           )}
         </div>
       </div>
-
       {/* Add Modal */}
       <Modal show={showAdd} onHide={() => setShowAdd(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>Add New Book</Modal.Title>
+          <Modal.Title>Thêm người dùng mới</Modal.Title>
         </Modal.Header>
         <Form onSubmit={handleAddSubmit}>
           <Modal.Body>
             <Row className="mb-3">
               <Form.Group as={Col} controlId="image">
-                <Form.Label>Image URL</Form.Label>
+                <Form.Label>URL avatar</Form.Label>
                 <Form.Control
                   type="text"
                   name="image"
-                  placeholder="Enter image URL"
+                  placeholder="Nhập URL avatar"
                   required
                 />
               </Form.Group>
             </Row>
             <Row className="mb-3">
               <Form.Group as={Col} controlId="name">
-                <Form.Label>Name</Form.Label>
+                <Form.Label>Tên người dùng</Form.Label>
                 <Form.Control
                   type="text"
                   name="name"
-                  placeholder="Enter book name"
+                  placeholder="Nhập tên người dùng"
                   required
                 />
               </Form.Group>
               <Form.Group as={Col} controlId="author">
-                <Form.Label>Author</Form.Label>
+                <Form.Label>Email</Form.Label>
                 <Form.Control
-                  type="text"
+                  type="email"
                   name="author"
-                  placeholder="Enter author name"
+                  placeholder="Nhập email"
                   required
                 />
               </Form.Group>
             </Row>
             <Form.Group controlId="category" className="mb-3">
-              <Form.Label>Category</Form.Label>
-              <Form.Control
-                type="text"
-                name="category"
-                placeholder="Enter category"
-                required
-              />
+              <Form.Label>Vai trò</Form.Label>
+              <Form.Control as="select" name="category" required>
+                <option value="">Chọn vai trò</option>
+                <option value="user">Người dùng</option>
+                <option value="admin">Quản trị viên</option>
+              </Form.Control>
             </Form.Group>
             <Row className="mb-3">
               <Form.Group as={Col} controlId="quantity">
-                <Form.Label>Quantity</Form.Label>
+                <Form.Label>Số điện thoại</Form.Label>
                 <Form.Control
-                  type="number"
+                  type="text"
                   name="quantity"
-                  defaultValue={1}
-                  min={1}
+                  placeholder="Nhập số điện thoại"
                   required
                 />
               </Form.Group>
               <Form.Group as={Col} controlId="discount">
-                <Form.Label>Discount (%)</Form.Label>
-                <Form.Control
-                  type="number"
-                  name="discount"
-                  defaultValue={0}
-                  min={0}
-                  max={100}
-                  required
-                />
+                <Form.Label>Trạng thái</Form.Label>
+                <Form.Control as="select" name="discount" required>
+                  <option value="active">Hoạt động</option>
+                  <option value="inactive">Vô hiệu hóa</option>
+                </Form.Control>
               </Form.Group>
             </Row>
             <Form.Group controlId="description" className="mb-3">
-              <Form.Label>Description</Form.Label>
+              <Form.Label>Ghi chú</Form.Label>
               <Form.Control
                 as="textarea"
                 rows={3}
                 name="description"
-                placeholder="Enter description"
+                placeholder="Nhập ghi chú"
               />
             </Form.Group>
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={() => setShowAdd(false)}>
-              Cancel
+              Hủy
             </Button>
             <Button type="submit" variant="primary">
-              Add Book
+              Thêm người dùng
             </Button>
           </Modal.Footer>
         </Form>
       </Modal>
-
       {/* Edit Modal */}
       <Modal show={showEdit} onHide={() => setShowEdit(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>Edit Book</Modal.Title>
+          <Modal.Title>Chỉnh sửa người dùng</Modal.Title>
         </Modal.Header>
         {editingBook && (
           <Form onSubmit={handleEditSubmit}>
@@ -433,10 +425,10 @@ const UsersManager = () => {
             </Modal.Body>
             <Modal.Footer>
               <Button variant="secondary" onClick={() => setShowEdit(false)}>
-                Cancel
+                Hủy
               </Button>
               <Button type="submit" variant="primary">
-                Save Changes
+                Lưu thay đổi
               </Button>
             </Modal.Footer>
           </Form>

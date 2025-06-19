@@ -33,7 +33,7 @@ const AdminSidebar = ({ isCollapsed }) => {
           className="rounded-circle mb-2"
           style={{ width: isCollapsed ? "30px" : "25%" }}
         />
-        {!isCollapsed && <h6>Admin Name</h6>}
+        {!isCollapsed && <h6>Quản trị viên</h6>}
       </div>
 
       {/* Navigation */}
@@ -43,8 +43,8 @@ const AdminSidebar = ({ isCollapsed }) => {
         }`}
         style={{ flexGrow: 1 }}
       >
-        <Nav.Link as={Link} to="/admin" title="Dashboard">
-          📊 {isCollapsed ? "" : "Dashboard"}
+        <Nav.Link as={Link} to="/admin" title="Bảng điều khiển">
+          📊 {isCollapsed ? "" : "Bảng điều khiển"}
         </Nav.Link>
         <Nav.Link as={Link} to="/admin/books" title="Quản lý sách">
           📚 {isCollapsed ? "" : "Quản lý sách"}

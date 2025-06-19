@@ -18,7 +18,7 @@ const Stats = () => {
             <Card.Body className="d-flex flex-column justify-content-between position-relative">
               <div className="text-center">
                 <h3 className="mb-2 fw-bold">150</h3>
-                <Card.Text className="mb-0">Books</Card.Text>
+                <Card.Text className="mb-0">Sách</Card.Text>
               </div>
               <div className="position-absolute top-0 end-0 p-3 opacity-25 stats-icon">
                 <FaBook size={50} />
@@ -26,10 +26,10 @@ const Stats = () => {
             </Card.Body>
             <Card.Footer className="bg-gradient bg-transparent border-0 text-center">
               <Link
-                to="/admin/orders"
+                to="/admin/books"
                 className="text-white text-decoration-none fw-medium"
               >
-                More info <FaArrowCircleRight className="ms-1" />
+                Xem thêm <FaArrowCircleRight className="ms-1" />
               </Link>
             </Card.Footer>
           </Card>
@@ -39,7 +39,7 @@ const Stats = () => {
             <Card.Body className="d-flex flex-column justify-content-between position-relative">
               <div className="text-center">
                 <h3 className="mb-2 fw-bold">150</h3>
-                <Card.Text className="mb-0">Authors</Card.Text>
+                <Card.Text className="mb-0">Tác giả</Card.Text>
               </div>
               <div className="position-absolute top-0 end-0 p-3 opacity-25 stats-icon">
                 <FaPenNib size={50} />
@@ -47,10 +47,10 @@ const Stats = () => {
             </Card.Body>
             <Card.Footer className="bg-gradient bg-transparent border-0 text-center">
               <Link
-                to="/admin/orders"
+                to="/admin/authors"
                 className="text-white text-decoration-none fw-medium"
               >
-                More info <FaArrowCircleRight className="ms-1" />
+                Xem thêm <FaArrowCircleRight className="ms-1" />
               </Link>
             </Card.Footer>
           </Card>
@@ -60,7 +60,7 @@ const Stats = () => {
             <Card.Body className="d-flex flex-column justify-content-between position-relative">
               <div className="text-center">
                 <h3 className="mb-2 fw-bold">150</h3>
-                <Card.Text className="mb-0">Users register</Card.Text>
+                <Card.Text className="mb-0">Người dùng</Card.Text>
               </div>
               <div className="position-absolute top-0 end-0 p-3 opacity-25 stats-icon">
                 <FaUserPlus size={50} />
@@ -68,10 +68,10 @@ const Stats = () => {
             </Card.Body>
             <Card.Footer className="bg-gradient bg-transparent border-0 text-center">
               <Link
-                to="/admin/orders"
+                to="/admin/users"
                 className="text-white text-decoration-none fw-medium"
               >
-                More info <FaArrowCircleRight className="ms-1" />
+                Xem thêm <FaArrowCircleRight className="ms-1" />
               </Link>
             </Card.Footer>
           </Card>
@@ -81,7 +81,7 @@ const Stats = () => {
             <Card.Body className="d-flex flex-column justify-content-between position-relative">
               <div className="text-center">
                 <h3 className="mb-2 fw-bold">150</h3>
-                <Card.Text className="mb-0">New Orders</Card.Text>
+                <Card.Text className="mb-0">Đơn hàng mới</Card.Text>
               </div>
               <div className="position-absolute top-0 end-0 p-3 opacity-25 stats-icon">
                 <FaShoppingBag size={50} />
@@ -92,7 +92,7 @@ const Stats = () => {
                 to="/admin/orders"
                 className="text-white text-decoration-none fw-medium"
               >
-                More info <FaArrowCircleRight className="ms-1" />
+                Xem thêm <FaArrowCircleRight className="ms-1" />
               </Link>
             </Card.Footer>
           </Card>
