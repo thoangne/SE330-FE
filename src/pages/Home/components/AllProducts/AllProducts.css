@@ -50,6 +50,34 @@
   padding: 1rem 0;
 }
 
+/* Product title styling for AllProducts */
+.all-products .product-grid .product-card .product-title {
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  height: 36.4px !important;
+  overflow: hidden !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  color: #333 !important;
+  font-weight: 500 !important;
+  margin-bottom: 4px !important;
+  cursor: default !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  hyphens: auto !important;
+}
+
+.all-products .product-grid .product-card .product-author {
+  font-size: 12px !important;
+  color: #666 !important;
+  margin-bottom: 8px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .hero-section {

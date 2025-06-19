@@ -14,7 +14,7 @@ function ProductGrid({ title, icon: Icon, fetchBooks, type, className = "" }) {
     const loadBooks = async () => {
       try {
         setLoading(true);
-        const { books: newBooks } = await fetchBooks(1, 8); // Load first 8 books
+        const { books: newBooks } = await fetchBooks(1, 10); // Load first 10 books
         setBooks(newBooks);
         setError(null);
       } catch (err) {
