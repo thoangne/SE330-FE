@@ -25,8 +25,7 @@ function LoginRegisterForm() {
     password: "",
     confirmPassword: "",
   });
-
-  const { login, register, isLoading, error, clearError, isAuthenticated } =
+  const { login, isLoading, error, clearError, isAuthenticated } =
     useAuthStore();
   const [formErrors, setFormErrors] = useState({});
   // Reset errors when switching tabs
@@ -114,25 +113,14 @@ function LoginRegisterForm() {
       }
     }
   };
-
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
-    const newErrors = validateRegisterForm();
-    setFormErrors(newErrors);
-
-    if (Object.keys(newErrors).length === 0) {
-      const result = await register({
-        email: registerData.email,
-        password: registerData.password,
-        confirmPassword: registerData.confirmPassword,
+    if (validateRegisterForm()) {
+      // TODO: Implement register API when available
+      setFormErrors({
+        registerGeneral:
+          "Chức năng đăng ký đang được phát triển. Vui lòng liên hệ admin để tạo tài khoản.",
       });
-
-      if (!result.success) {
-        setFormErrors((prev) => ({
-          ...prev,
-          registerGeneral: result.message || "Đăng ký thất bại",
-        }));
-      }
     }
   };
 

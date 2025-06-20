@@ -22,10 +22,10 @@ function Header() {
   const { user, isAuthenticated, logout } = useAuthStore();
   const { items } = useCartStore();
   const cartCount = items?.length || 0;
-
   const handleLogout = () => {
     logout();
-    navigate("/login");
+    // Navigate to home instead of login after logout
+    navigate("/");
   };
 
   const handleSearch = (e) => {

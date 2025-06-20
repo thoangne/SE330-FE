@@ -1,64 +1,114 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { toast } from "react-hot-toast";
+import {
+  login as loginAPI,
+  logout as logoutAPI,
+  getCurrentUser,
+  checkAuthStatus,
+} from "../services/authService";
 
-// Simplified version for testing
 export const useAuthStore = create(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       isLoading: false,
       error: null,
       isAuthenticated: false,
+      isInitialized: false, // Track if auth has been initialized
+
+      // Initialize auth state from localStorage
+      initializeAuth: () => {
+        const authData = getCurrentUser();
+        set({
+          user: authData.user,
+          isAuthenticated: authData.isAuthenticated,
+          isInitialized: true,
+        });
+      },
 
       login: async (email, password) => {
         set({ isLoading: true, error: null });
         try {
-          // Mock login for testing
-          await new Promise((resolve) => setTimeout(resolve, 1000));
+          const result = await loginAPI(email, password);
 
-          if (email === "test@example.com" && password === "password123") {
-            const mockUser = {
-              id: 1,
-              email,
-              name: "Test User",
-            };
-            localStorage.setItem("accessToken", "mock-token");
-            set({ user: mockUser, isAuthenticated: true });
-            toast.success("Đăng nhập thành công");
+          if (result.success) {
+            set({
+              user: result.data.user,
+              isAuthenticated: true,
+              error: null,
+            });
+            toast.success(result.message);
             return { success: true };
+          } else {
+            set({ error: result.message });
+            toast.error(result.message);
+            return { success: false, message: result.message };
           }
-
-          set({ error: "Email hoặc mật khẩu không đúng" });
-          toast.error("Email hoặc mật khẩu không đúng");
-          return { success: false, message: "Email hoặc mật khẩu không đúng" };
-        } catch {
-          set({ error: "Đăng nhập thất bại" });
-          toast.error("Đăng nhập thất bại");
-          return { success: false, message: "Đăng nhập thất bại" };
+        } catch (error) {
+          const errorMessage = error.message || "Đăng nhập thất bại";
+          set({ error: errorMessage });
+          toast.error(errorMessage);
+          return { success: false, message: errorMessage };
         } finally {
           set({ isLoading: false });
         }
       },
 
-      logout: () => {
-        localStorage.removeItem("accessToken");
-        set({ user: null, isAuthenticated: false, error: null });
-        toast.success("Đăng xuất thành công");
+      logout: async () => {
+        try {
+          await logoutAPI();
+        } catch (error) {
+          console.error("Logout error:", error);
+        } finally {
+          set({
+            user: null,
+            isAuthenticated: false,
+            error: null,
+          });
+          toast.success("Đăng xuất thành công");
+        }
       },
+
+      // Check if user is still authenticated (called on app init)
+      checkAuth: () => {
+        const isAuth = checkAuthStatus();
+        if (isAuth) {
+          const authData = getCurrentUser();
+          set({
+            user: authData.user,
+            isAuthenticated: true,
+          });
+        } else {
+          set({
+            user: null,
+            isAuthenticated: false,
+          });
+        }
+      },
+
       clearError: () => set({ error: null }),
 
-      // Initialize from localStorage
-      initFromStorage: () => {
-        const token = localStorage.getItem("accessToken");
-        if (token) {
-          set({ isAuthenticated: true });
+      // Update user profile
+      updateUser: (userData) => {
+        set((state) => ({
+          user: { ...state.user, ...userData },
+        }));
+        // Update localStorage as well
+        const currentUser = get().user;
+        if (currentUser) {
+          localStorage.setItem("user", JSON.stringify(currentUser));
         }
       },
     }),
     {
-      name: "auth-store",
+      name: "auth-storage",
       storage: createJSONStorage(() => localStorage),
+      // Only persist these fields
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+      }),
     }
   )
 );

@@ -76,6 +76,31 @@ const useProfileStore = create((set) => ({
       set({ error: error.message, isLoading: false });
     }
   },
+
+  // Wishlist management functions
+  addToWishlist: (product) => {
+    set((state) => {
+      const isAlreadyInWishlist = state.wishlist.some(
+        (item) => item.id === product.id
+      );
+      if (isAlreadyInWishlist) {
+        return state; // Don't add if already exists
+      }
+      return {
+        wishlist: [...state.wishlist, product],
+      };
+    });
+  },
+
+  removeFromWishlist: (productId) => {
+    set((state) => ({
+      wishlist: state.wishlist.filter((item) => item.id !== productId),
+    }));
+  },
+
+  isInWishlist: (productId) => {
+    return (state) => state.wishlist.some((item) => item.id === productId);
+  },
 }));
 
 export default useProfileStore;

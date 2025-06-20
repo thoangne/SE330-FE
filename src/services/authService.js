@@ -1,51 +1,119 @@
 import httpClient, { ENDPOINTS } from "./httpClient";
-import { MOCK_USER, MOCK_TOKEN } from "./mockData";
-/* import { toast } from "react-hot-toast"; */
 
 export const login = async (email, password) => {
-  // Mock API delay
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-
   try {
-    // Mock authentication
-    if (email === MOCK_USER.email && password === MOCK_USER.password) {
-      // Save mock token
-      localStorage.setItem("accessToken", MOCK_TOKEN);
+    const response = await httpClient.post(ENDPOINTS.LOGIN, {
+      email,
+      password,
+    });
+
+    const { data } = response;
+
+    if (data.success && data.accessToken) {
+      // Save access token to localStorage
+      localStorage.setItem("accessToken", data.accessToken);
+
+      // Save user data
+      localStorage.setItem("user", JSON.stringify(data.user));
 
       return {
         success: true,
         data: {
-          user: MOCK_USER,
-          accessToken: MOCK_TOKEN,
+          user: data.user,
+          accessToken: data.accessToken,
         },
-        message: "Đăng nhập thành công",
+        message: data.message || "Đăng nhập thành công",
       };
     }
 
     return {
       success: false,
       data: null,
-      message: "Email hoặc mật khẩu không đúng",
+      message: data.message || "Đăng nhập thất bại",
     };
   } catch (error) {
     console.error("Login error:", error);
+
+    const errorMessage =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      "Có lỗi xảy ra khi đăng nhập";
+
     return {
       success: false,
       data: null,
-      message: "Có lỗi xảy ra khi đăng nhập",
+      message: errorMessage,
     };
   }
 };
 
 export const logout = async () => {
   try {
+    // Call logout endpoint to invalidate refresh token on server
     await httpClient.post(ENDPOINTS.LOGOUT);
   } catch (error) {
     console.error("Logout error:", error);
+    // Even if logout API fails, we still clear local data
   } finally {
+    // Clear all local authentication data
     localStorage.removeItem("accessToken");
-    // Additional cleanup if needed
+    localStorage.removeItem("user");
   }
+};
+
+export const refreshToken = async () => {
+  try {
+    const response = await httpClient.post(ENDPOINTS.REFRESH_TOKEN);
+    const { data } = response;
+
+    if (data.success && data.accessToken) {
+      localStorage.setItem("accessToken", data.accessToken);
+      return {
+        success: true,
+        accessToken: data.accessToken,
+      };
+    }
+
+    throw new Error("Invalid refresh response");
+  } catch (error) {
+    console.error("Refresh token error:", error);
+    throw error;
+  }
+};
+
+export const getCurrentUser = () => {
+  try {
+    const userStr = localStorage.getItem("user");
+    const accessToken = localStorage.getItem("accessToken");
+
+    if (userStr && accessToken) {
+      return {
+        user: JSON.parse(userStr),
+        accessToken,
+        isAuthenticated: true,
+      };
+    }
+
+    return {
+      user: null,
+      accessToken: null,
+      isAuthenticated: false,
+    };
+  } catch (error) {
+    console.error("Get current user error:", error);
+    return {
+      user: null,
+      accessToken: null,
+      isAuthenticated: false,
+    };
+  }
+};
+
+export const checkAuthStatus = () => {
+  const accessToken = localStorage.getItem("accessToken");
+  const user = localStorage.getItem("user");
+
+  return !!(accessToken && user);
 };
 
 export const forgotPassword = async (email) => {

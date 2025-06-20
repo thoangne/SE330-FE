@@ -1,7 +1,14 @@
 import axios from "axios";
 import { toast } from "react-hot-toast";
 
-export const API_BASE_URL = "http://localhost:8000/api";
+// Use environment variable to determine if we should use proxy or direct URL
+const USE_PROXY = import.meta.env.VITE_USE_PROXY === "true";
+const API_DIRECT_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  "https://quanlynhasach-be.onrender.com/api";
+
+export const API_BASE_URL =
+  USE_PROXY && import.meta.env.DEV ? "/api" : API_DIRECT_URL;
 
 export const ENDPOINTS = {
   LOGIN: "/auth/login",
@@ -15,20 +22,43 @@ export const ENDPOINTS = {
 
 const httpClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 15000, // Increase timeout for slower connections
   withCredentials: true, // Important for cookies
   headers: {
     "Content-Type": "application/json",
+    Accept: "application/json",
   },
 });
+
+// Log configuration info in development
+if (import.meta.env.DEV) {
+  console.log("🔗 HTTP Client Configuration:");
+  console.log("   Base URL:", API_BASE_URL);
+  console.log("   Use Proxy:", USE_PROXY);
+  console.log("   Direct URL:", API_DIRECT_URL);
+}
 
 // Request interceptor
 httpClient.interceptors.request.use(
   async (config) => {
-    const accessToken = localStorage.getItem("accessToken");
-    if (accessToken) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
+    // Don't add token to login/register/forgot-password endpoints
+    const noAuthEndpoints = [
+      ENDPOINTS.LOGIN,
+      ENDPOINTS.FORGOT_PASSWORD,
+      ENDPOINTS.RESET_PASSWORD,
+    ];
+
+    const isNoAuthEndpoint = noAuthEndpoints.some((endpoint) =>
+      config.url?.includes(endpoint)
+    );
+
+    if (!isNoAuthEndpoint) {
+      const accessToken = localStorage.getItem("accessToken");
+      if (accessToken) {
+        config.headers.Authorization = `Bearer ${accessToken}`;
+      }
     }
+
     return config;
   },
   (error) => Promise.reject(error)
@@ -51,11 +81,6 @@ const processQueue = (error, token = null) => {
 
 httpClient.interceptors.response.use(
   (response) => {
-    // Check if we have a new access token in the response headers
-    const newAccessToken = response.headers["x-access-token"];
-    if (newAccessToken) {
-      localStorage.setItem("accessToken", newAccessToken);
-    }
     return response;
   },
   async (error) => {
@@ -78,6 +103,7 @@ httpClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
+        // Try to refresh token using cookie
         const response = await httpClient.post(ENDPOINTS.REFRESH_TOKEN);
         const { accessToken } = response.data;
 
@@ -95,6 +121,11 @@ httpClient.interceptors.response.use(
 
         // If refresh token is expired, logout user
         localStorage.removeItem("accessToken");
+
+        // Import useAuthStore dynamically to avoid circular dependencies
+        const { useAuthStore } = await import("../stores/useAuthStore");
+        useAuthStore.getState().logout();
+
         toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
         window.location.href = "/login";
         return Promise.reject(refreshError);

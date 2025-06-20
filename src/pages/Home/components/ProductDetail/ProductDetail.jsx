@@ -2,13 +2,20 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Container, Row, Col, Button, Tabs, Tab, Form } from "react-bootstrap";
-import { FaStar, FaStarHalf, FaRegStar } from "react-icons/fa";
+import {
+  FaStar,
+  FaStarHalf,
+  FaRegStar,
+  FaHeart,
+  FaRegHeart,
+} from "react-icons/fa";
 import {
   getProductById,
   getProductReviews,
   addProductReview,
 } from "../../../../services/productService";
 import { useCartStore } from "../../../../stores/useCartStore";
+import useProfileStore from "../../../../stores/useProfileStore";
 import "./ProductDetail.css";
 
 const ProductDetail = () => {
@@ -23,10 +30,13 @@ const ProductDetail = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  const [wishlistMessage, setWishlistMessage] = useState("");
   // Add useCartStore hook
   const addToCart = useCartStore((state) => state.addToCart);
-
+  // Add wishlist hooks
+  const { wishlist, addToWishlist, removeFromWishlist, fetchWishlist } =
+    useProfileStore();
+  const isInWishlist = wishlist.some((item) => item.id === parseInt(id));
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -36,6 +46,9 @@ const ProductDetail = () => {
 
         const reviewsData = await getProductReviews(id);
         setReviews(reviewsData);
+
+        // Fetch wishlist data
+        fetchWishlist();
 
         setError(null);
       } catch (error) {
@@ -47,16 +60,36 @@ const ProductDetail = () => {
     };
 
     fetchData();
-  }, [id]);
+  }, [id, fetchWishlist]);
 
   const handleQuantityChange = (value) => {
     const newQuantity = Math.max(1, Math.min(value, product?.stock || 1));
     setQuantity(newQuantity);
   };
-
   const handleAddToCart = () => {
     if (product) {
       addToCart(product, quantity);
+    }
+  };
+  const handleWishlistToggle = () => {
+    if (product) {
+      if (isInWishlist) {
+        removeFromWishlist(product.id);
+        setWishlistMessage("Đã xóa khỏi danh sách yêu thích");
+      } else {
+        addToWishlist(product);
+        setWishlistMessage("Đã thêm vào danh sách yêu thích");
+        // Add animation class for visual feedback
+        const btn = document.querySelector(".wishlist-btn");
+        if (btn) {
+          btn.style.animation = "none";
+          btn.offsetHeight; // Trigger reflow
+          btn.style.animation = "wishlistAdded 0.6s ease";
+        }
+      }
+
+      // Clear message after 3 seconds
+      setTimeout(() => setWishlistMessage(""), 3000);
     }
   };
 
@@ -130,7 +163,6 @@ const ProductDetail = () => {
                 Đã bán: {Math.floor(Math.random() * 1000)}
               </div>
             </div>
-
             <div className="price-section mb-4">
               <div className="current-price">
                 {(product.price * (1 - product.discount / 100)).toLocaleString(
@@ -144,12 +176,10 @@ const ProductDetail = () => {
                 </div>
               )}
             </div>
-
             <div className="mb-4">
               <h5>Tác giả: {product.author}</h5>
               <p>{product.description}</p>
             </div>
-
             <div className="quantity-section mb-4">
               <div className="d-flex align-items-center">
                 <label className="me-3">Số lượng:</label>
@@ -180,17 +210,39 @@ const ProductDetail = () => {
                   {product.stock} sản phẩm có sẵn
                 </span>
               </div>
-            </div>
-
+            </div>{" "}
             <div className="action-buttons">
-              <Button
-                variant="primary"
-                size="lg"
-                onClick={handleAddToCart}
-                disabled={product.stock === 0}
-              >
-                Thêm vào giỏ hàng
-              </Button>
+              <div className="d-flex gap-3">
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={handleAddToCart}
+                  disabled={product.stock === 0}
+                  className="flex-grow-1"
+                >
+                  Thêm vào giỏ hàng
+                </Button>{" "}
+                <Button
+                  variant={isInWishlist ? "danger" : "outline-danger"}
+                  size="lg"
+                  onClick={handleWishlistToggle}
+                  className="wishlist-btn d-flex align-items-center justify-content-center"
+                  title={
+                    isInWishlist
+                      ? "Xóa khỏi danh sách yêu thích"
+                      : "Thêm vào danh sách yêu thích"
+                  }
+                >
+                  {isInWishlist ? <FaHeart /> : <FaRegHeart />}
+                </Button>
+              </div>
+
+              {/* Wishlist message */}
+              {wishlistMessage && (
+                <div className="wishlist-message mt-2">
+                  <small className="text-success">{wishlistMessage}</small>
+                </div>
+              )}
             </div>
           </Col>
         </Row>
