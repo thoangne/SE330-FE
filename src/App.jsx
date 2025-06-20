@@ -35,19 +35,19 @@ function App() {
     <AuthErrorBoundary>
       <AuthProvider>
         {isAdminRoute ? (
-          <RequireAdmin>
-            <Routes>
-              <Route path="/admin" element={<AdminLayout />}>
-                <Route index element={<AdminDashboard />} />
-                <Route path="books" element={<BooksManager />} />
-                <Route path="users" element={<UsersManager />} />
-                <Route path="authors" element={<AuthorManager />} />
-                <Route path="orders" element={<OrdersManager />} />
-                <Route path="*" element={<NotFoundPage />} />
-              </Route>
-            </Routes>
-          </RequireAdmin>
+          // <RequireAdmin>
+          <Routes>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="books" element={<BooksManager />} />
+              <Route path="users" element={<UsersManager />} />
+              <Route path="authors" element={<AuthorManager />} />
+              <Route path="orders" element={<OrdersManager />} />
+              <Route path="*" element={<NotFoundPage />} />
+            </Route>
+          </Routes>
         ) : (
+          // </RequireAdmin>
           <>
             <Header />
             <main style={{ minHeight: "80vh" }}>
