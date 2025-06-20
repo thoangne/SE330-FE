@@ -19,6 +19,7 @@ function LoginForm() {
     password: "",
     confirmPassword: "",
   });
+  const { Register, Login, isLoading, error } = useAuthStore();
   const [errors, setErrors] = useState({});
 
   const handleLoginSubmit = (e) => {
@@ -31,8 +32,7 @@ function LoginForm() {
 
     setErrors(newErrors);
     if (Object.keys(newErrors).length === 0) {
-      // Submit logic here
-      console.log("Đăng nhập:", loginData);
+      Login(loginData);
     }
   };
 
