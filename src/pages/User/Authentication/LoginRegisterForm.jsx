@@ -25,8 +25,7 @@ function LoginRegisterForm() {
     password: "",
     confirmPassword: "",
   });
-  const { login, isLoading, error, clearError, isAuthenticated } =
-    useAuthStore();
+  const { login, isLoading, error, clearError } = useAuthStore();
   const [formErrors, setFormErrors] = useState({});
   // Reset errors when switching tabs
   const handleTabSelect = (k) => {
@@ -35,7 +34,6 @@ function LoginRegisterForm() {
     clearError();
   };
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       clearError();
@@ -43,13 +41,25 @@ function LoginRegisterForm() {
     };
   }, [clearError]);
 
-  // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated) {
-      const redirectTo = location.state?.from?.pathname || "/";
-      navigate(redirectTo, { replace: true });
-    }
-  }, [isAuthenticated, location.state?.from?.pathname, navigate]);
+    const checkAndRedirect = () => {
+      // Get current auth state in useEffect after login/register to make sure we have the laster auth state
+      const authState = useAuthStore.getState();
+      const currentUser = authState.user;
+      const isCurrentlyAuthenticated = authState.isAuthenticated;
+
+      if (isCurrentlyAuthenticated && currentUser && currentUser.role) {
+        if (currentUser.role === "ADMIN") {
+          navigate("/admin", { replace: true });
+        } else {
+          const redirectTo = location.state?.from?.pathname || "/";
+          navigate(redirectTo, { replace: true });
+        }
+      }
+    };
+
+    checkAndRedirect();
+  }, [navigate, location.state]);
 
   // Reset form errors when user starts typing
   const handleInputChange = (formType, field, value) => {
@@ -101,7 +111,18 @@ function LoginRegisterForm() {
     if (validateLoginForm()) {
       try {
         const result = await login(loginData.email, loginData.password);
-        if (!result.success) {
+        if (result.success) {
+          setTimeout(() => {
+            const currentUser = useAuthStore.getState().user;
+
+            if (currentUser?.role === "ADMIN") {
+              navigate("/admin", { replace: true });
+            } else {
+              const redirectTo = location.state?.from?.pathname || "/";
+              navigate(redirectTo, { replace: true });
+            }
+          }, 100);
+        } else {
           setFormErrors({
             loginGeneral: result.message || "Đăng nhập thất bại",
           });
