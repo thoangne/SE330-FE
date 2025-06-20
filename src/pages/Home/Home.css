@@ -1,0 +1,22 @@
+.home-wrapper {
+  width: 100%;
+  background-color: #f5f5f5;
+}
+
+.home-wrapper .container {
+  max-width: 1320px;
+  padding: 0 15px;
+  margin: 0 auto;
+}
+
+/* Add space between sections */
+.product-sections {
+  margin-top: 2rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .home-wrapper .container {
+    padding: 0 10px;
+  }
+}
