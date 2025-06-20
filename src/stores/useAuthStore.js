@@ -26,7 +26,6 @@ export const useAuthStore = create(
           isInitialized: true,
         });
       },
-
       login: async (email, password) => {
         set({ isLoading: true, error: null });
         try {
@@ -38,6 +37,7 @@ export const useAuthStore = create(
               isAuthenticated: true,
               error: null,
             });
+
             toast.success(result.message);
             return { success: true };
           } else {
