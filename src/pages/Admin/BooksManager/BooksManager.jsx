@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, use, useEffect } from "react";
 import {
   Container,
   Table,
@@ -10,6 +10,7 @@ import {
   Modal,
   Row,
   Col,
+  Spinner,
 } from "react-bootstrap";
 import {
   FaSearch,
@@ -20,35 +21,16 @@ import {
   FaSortDown,
   FaPlus,
 } from "react-icons/fa";
+import useBookStore from "../../../stores/useBookStore";
 
 const BooksManager = () => {
-  // Dữ liệu mẫu
-  const initialBooks = [
-    {
-      id: 1,
-      image: "https://via.placeholder.com/50",
-      name: "Book One",
-      author: "John Doe",
-      category: "Fiction",
-      quantity: 100,
-      description: "A thrilling adventure novel.",
-      discount: 10,
-    },
-    {
-      id: 2,
-      image: "https://via.placeholder.com/50",
-      name: "Book Two",
-      author: "Jane Smith",
-      category: "Non-Fiction",
-      quantity: 50,
-      description: "A guide to productivity.",
-      discount: 20,
-    },
-    // ... các bản ghi khác
-  ];
+  const { books, isLoading, addBook, updateBook, deleteBook, fetchBooks } =
+    useBookStore();
 
-  // State
-  const [books, setBooks] = useState(initialBooks);
+  useEffect(() => {
+    fetchBooks();
+  }, [fetchBooks]);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
   const [currentPage, setCurrentPage] = useState(1);
@@ -82,16 +64,18 @@ const BooksManager = () => {
     e.preventDefault();
     const form = e.target;
     const newBook = {
-      id: Date.now(),
-      image: form.image.value,
-      name: form.name.value,
-      author: form.author.value,
-      category: form.category.value,
-      quantity: parseInt(form.quantity.value, 10),
-      description: form.description.value,
-      discount: parseInt(form.discount.value, 10),
+      coverImage: form.image.value,
+      description: form.name.value,
+      discount: form.author.value,
+      price: form.category.value,
+      slug: parseInt(form.quantity.value, 10),
+      stock: form.description.value,
+      title: parseInt(form.discount.value, 10),
+      publisherId: parseInt(form.discount.value, 10),
+      categoryId: parseInt(form.discount.value, 10),
+      authorIds: parseInt(form.discount.value, 10),
     };
-    setBooks([newBook, ...books]);
+    addBook(newBook);
     setShowAdd(false);
   };
 
@@ -100,31 +84,38 @@ const BooksManager = () => {
     const form = e.target;
     const updated = {
       ...editingBook,
-      image: form.image.value,
-      name: form.name.value,
-      author: form.author.value,
+      coverImage: form.image.value,
+      title: form.name.value,
+      authors: form.author.value,
       category: form.category.value,
       quantity: parseInt(form.quantity.value, 10),
       description: form.description.value,
       discount: parseInt(form.discount.value, 10),
     };
-    setBooks(books.map((b) => (b.id === updated.id ? updated : b)));
+    console.log(updated);
+    // updateBook(id,updated);
     setShowEdit(false);
   };
   const handleDelete = (id) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa sách này?")) {
-      setBooks(books.filter((book) => book.id !== id));
+      deleteBook(id);
     }
   };
 
   // Filtering
   const filteredBooks = useMemo(
     () =>
-      books.filter(
-        (book) =>
-          book.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          book.author.toLowerCase().includes(searchTerm.toLowerCase())
-      ),
+      books
+        ? books.filter(
+            (book) =>
+              (book.name || "")
+                .toLowerCase()
+                .includes((searchTerm || "").toLowerCase()) ||
+              (book.author || "")
+                .toLowerCase()
+                .includes((searchTerm || "").toLowerCase())
+          )
+        : [],
     [books, searchTerm]
   );
 
@@ -167,6 +158,13 @@ const BooksManager = () => {
       <FaSortDown className="ms-1" />
     );
   };
+  if (isLoading) {
+    return (
+      <div className="d-flex justify-content-center">
+        <Spinner animation="border" role="status" />
+      </div>
+    );
+  }
 
   return (
     <Container fluid className="p-0">
@@ -217,17 +215,17 @@ const BooksManager = () => {
                 <tr key={book.id}>
                   <td>
                     <Image
-                      src={book.image}
-                      alt={book.name}
+                      src={book.coverImage}
+                      alt={book.title}
                       width={50}
                       height={50}
                       rounded
                     />
                   </td>
-                  <td>{book.name}</td>
-                  <td>{book.author}</td>
-                  <td>{book.category}</td>
-                  <td>{book.quantity}</td>
+                  <td>{book.title}</td>
+                  <td>{book.authors.name}</td>
+                  <td>{book.category.name}</td>
+                  <td>{book.stock}</td>
                   <td className="text-truncate" style={{ maxWidth: "150px" }}>
                     {book.description}
                   </td>
