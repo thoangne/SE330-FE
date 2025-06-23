@@ -9,7 +9,7 @@ import {
   FaUserPlus,
 } from "react-icons/fa";
 
-const Stats = () => {
+const Stats = ({ books, authors, users, orders }) => {
   return (
     <Container fluid className="p-0">
       <Row className="g-3">
@@ -17,7 +17,7 @@ const Stats = () => {
           <Card className="h-100 bg-info text-white border-0 shadow-sm overflow-hidden">
             <Card.Body className="d-flex flex-column justify-content-between position-relative">
               <div className="text-center">
-                <h3 className="mb-2 fw-bold">150</h3>
+                <h3 className="mb-2 fw-bold">{books || 0}</h3>
                 <Card.Text className="mb-0">Sách</Card.Text>
               </div>
               <div className="position-absolute top-0 end-0 p-3 opacity-25 stats-icon">
@@ -38,7 +38,7 @@ const Stats = () => {
           <Card className="h-100 bg-warning text-white border-0 shadow-sm overflow-hidden">
             <Card.Body className="d-flex flex-column justify-content-between position-relative">
               <div className="text-center">
-                <h3 className="mb-2 fw-bold">150</h3>
+                <h3 className="mb-2 fw-bold">{authors || 0}</h3>
                 <Card.Text className="mb-0">Tác giả</Card.Text>
               </div>
               <div className="position-absolute top-0 end-0 p-3 opacity-25 stats-icon">
@@ -59,7 +59,7 @@ const Stats = () => {
           <Card className="h-100 bg-danger text-white border-0 shadow-sm overflow-hidden">
             <Card.Body className="d-flex flex-column justify-content-between position-relative">
               <div className="text-center">
-                <h3 className="mb-2 fw-bold">150</h3>
+                <h3 className="mb-2 fw-bold">{users || 0}</h3>
                 <Card.Text className="mb-0">Người dùng</Card.Text>
               </div>
               <div className="position-absolute top-0 end-0 p-3 opacity-25 stats-icon">
@@ -80,7 +80,7 @@ const Stats = () => {
           <Card className="h-100 bg-success text-white border-0 shadow-sm overflow-hidden">
             <Card.Body className="d-flex flex-column justify-content-between position-relative">
               <div className="text-center">
-                <h3 className="mb-2 fw-bold">150</h3>
+                <h3 className="mb-2 fw-bold">{orders || 0}</h3>
                 <Card.Text className="mb-0">Đơn hàng mới</Card.Text>
               </div>
               <div className="position-absolute top-0 end-0 p-3 opacity-25 stats-icon">
