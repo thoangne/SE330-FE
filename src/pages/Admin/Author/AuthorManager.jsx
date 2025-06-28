@@ -39,7 +39,6 @@ const AuthorManager = () => {
     updateAuthor,
     deleteAuthor,
     isLoading,
-    error,
   } = useAuthorStore();
 
   /* ----------------------------- lifecycle ----------------------------- */

@@ -42,7 +42,7 @@ function Header() {
       <Container>
         <Navbar.Brand href="/" className="logo-hover">
           <img
-            src="/vite.svg"
+            src="/logo.svg"
             width="120"
             height="40"
             alt="Fahasa Clone"
