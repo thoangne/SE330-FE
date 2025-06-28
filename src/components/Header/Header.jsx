@@ -32,7 +32,7 @@ function Header() {
     e.preventDefault();
     if (keyword.trim()) {
       // Điều hướng đến trang DetailSearch với query parameter
-      navigate(`/search?q=${encodeURIComponent(keyword.trim())}`);
+      navigate(`/search?name=${encodeURIComponent(keyword.trim())}`);
       setKeyword("");
     }
   };

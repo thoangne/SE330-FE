@@ -1,3 +1,9 @@
+/**
+ * @deprecated This service uses mock data and will be replaced by userProductService.js
+ * Please use userProductService for real API calls.
+ * This file will be removed in future updates.
+ */
+
 // Tạo danh sách tác giả để random
 const authors = [
   "Dale Carnegie",

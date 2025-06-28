@@ -14,7 +14,9 @@ function ProductGrid({ title, icon: Icon, fetchBooks, type, className = "" }) {
     const loadBooks = async () => {
       try {
         setLoading(true);
-        const { books: newBooks } = await fetchBooks(1, 10); // Load first 10 books
+        const response = await fetchBooks(); // Call without parameters as limit is built-in
+        // Handle different response formats
+        const newBooks = response?.content || response || [];
         setBooks(newBooks);
         setError(null);
       } catch (err) {
@@ -75,12 +77,12 @@ function ProductGrid({ title, icon: Icon, fetchBooks, type, className = "" }) {
             <div
               key={book.id}
               className="product-card"
-              onClick={() => navigate(`/product/${book.id}`)}
+              onClick={() => navigate(`/product/${book.slug || book.id}`)}
             >
               <div className="product-image-wrapper">
                 <img
-                  src={book.image}
-                  alt={book.name}
+                  src={book.coverImage || book.image}
+                  alt={book.title || book.name}
                   className="product-image"
                 />
                 {book.discount > 0 && (
@@ -88,10 +90,14 @@ function ProductGrid({ title, icon: Icon, fetchBooks, type, className = "" }) {
                 )}
               </div>
               <div className="product-info">
-                <h3 className="product-title" title={book.name}>
-                  {book.name}
+                <h3 className="product-title" title={book.title || book.name}>
+                  {book.title || book.name}
                 </h3>
-                <p className="product-author">{book.author}</p>
+                <p className="product-author">
+                  {book.authors && book.authors.length > 0
+                    ? book.authors.map((author) => author.name).join(", ")
+                    : book.author || "Không rõ tác giả"}
+                </p>
                 <div className="price-container">
                   <div className="product-price">
                     {(

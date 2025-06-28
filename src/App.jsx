@@ -82,12 +82,13 @@ function App() {
                 />
                 <Route path="/search" element={<DetailSearch />} />
                 <Route path="/products/:type" element={<AllProducts />} />
+                <Route path="/category/:categoryId" element={<AllProducts />} />
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </main>
             <Footer />
           </>
-        )}{" "}
+        )}
         <Toaster position="top-right" reverseOrder={false} />
       </AuthProvider>
     </AuthErrorBoundary>
