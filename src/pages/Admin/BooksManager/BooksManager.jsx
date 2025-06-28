@@ -223,8 +223,8 @@ const BooksManager = () => {
                     />
                   </td>
                   <td>{book.title}</td>
-                  <td>{book.authors.name}</td>
-                  <td>{book.category.name}</td>
+                  <td>{book.authors?.name || "Unknown"}</td>
+                  <td>{book.category?.name || "Unknown"}</td>
                   <td>{book.stock}</td>
                   <td className="text-truncate" style={{ maxWidth: "150px" }}>
                     {book.description}
