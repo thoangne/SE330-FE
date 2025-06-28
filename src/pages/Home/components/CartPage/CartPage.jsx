@@ -783,7 +783,7 @@ function CartPage() {
 
         {/* Order Summary Sidebar */}
         <Col lg={4}>
-          <div className="sticky-top" style={{ top: "20px" }}>
+          <div className="sticky-top" style={{ top: "80px", zIndex: 1010 }}>
             <Card className="border-0 shadow-lg">
               <Card.Header className="bg-primary text-white">
                 <h5 className="mb-0 fw-bold">

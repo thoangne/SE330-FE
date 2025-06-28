@@ -146,7 +146,8 @@
 
 .checkout-summary {
   position: sticky;
-  top: 20px;
+  top: 80px;
+  z-index: 1010;
   background: white;
   border-radius: 12px;
   padding: 25px;
@@ -346,6 +347,14 @@
 }
 
 /* Responsive Design */
+/* Responsive Styles */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .checkout-summary {
+    top: 70px; /* Slightly smaller top value for tablets */
+    z-index: 1010; /* Ensure z-index is maintained */
+  }
+}
+
 @media (max-width: 768px) {
   .checkout-content {
     grid-template-columns: 1fr;
@@ -354,6 +363,8 @@
 
   .checkout-summary {
     position: static;
+    top: auto;
+    z-index: auto; /* Reset z-index for mobile */
   }
 
   .checkout-header h1 {
