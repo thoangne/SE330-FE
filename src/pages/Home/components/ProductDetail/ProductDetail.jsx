@@ -9,12 +9,11 @@ import {
   FaHeart,
   FaRegHeart,
 } from "react-icons/fa";
-import {
-  getProductById,
-  getProductReviews,
-  addProductReview,
-} from "../../../../services/productService";
+import { userProductService } from "../../../../services/userProductService";
+import { userReviewService } from "../../../../services/userReviewService";
+import { userCartService } from "../../../../services/userServices";
 import { useCartStore } from "../../../../stores/useCartStore";
+import { useAuthStore } from "../../../../stores/useAuthStore";
 import useProfileStore from "../../../../stores/useProfileStore";
 import "./ProductDetail.css";
 
@@ -22,6 +21,7 @@ const ProductDetail = () => {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
+  const [relatedProducts, setRelatedProducts] = useState([]);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("description");
   const [reviewForm, setReviewForm] = useState({
@@ -31,21 +31,46 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [wishlistMessage, setWishlistMessage] = useState("");
+
   // Add useCartStore hook
   const addToCart = useCartStore((state) => state.addToCart);
+
+  // Add auth store to get user info
+  const { user, isAuthenticated } = useAuthStore();
+
   // Add wishlist hooks
   const { wishlist, addToWishlist, removeFromWishlist, fetchWishlist } =
     useProfileStore();
-  const isInWishlist = wishlist.some((item) => item.id === parseInt(id));
+  const isInWishlist = wishlist.some((item) => item.id === product?.id);
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const productData = await getProductById(id);
+        const productData = await userProductService.getProductBySlugOrId(id);
         setProduct(productData);
 
-        const reviewsData = await getProductReviews(id);
+        const reviewsData = await userReviewService.getReviewsByProductId(
+          productData.id
+        );
         setReviews(reviewsData);
+
+        // Fetch related products (same category)
+        if (productData.categoryId) {
+          try {
+            const categoryProducts =
+              await userProductService.getProductsByCategory(
+                productData.categoryId
+              );
+            // Filter out current product and limit to 4 items
+            const related = categoryProducts
+              .filter((p) => p.id !== productData.id)
+              .slice(0, 4);
+            setRelatedProducts(related);
+          } catch (err) {
+            console.error("Error fetching related products:", err);
+            setRelatedProducts([]);
+          }
+        }
 
         // Fetch wishlist data
         fetchWishlist();
@@ -66,9 +91,15 @@ const ProductDetail = () => {
     const newQuantity = Math.max(1, Math.min(value, product?.stock || 1));
     setQuantity(newQuantity);
   };
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (product) {
-      addToCart(product, quantity);
+      if (isAuthenticated && user?.id) {
+        // For authenticated users, use API-aware addToCart
+        await addToCart(product, quantity, userCartService, user.id);
+      } else {
+        // For guest users, use local storage only
+        await addToCart(product, quantity);
+      }
     }
   };
   const handleWishlistToggle = () => {
@@ -96,11 +127,11 @@ const ProductDetail = () => {
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
     try {
-      const newReview = await addProductReview(id, {
+      const newReview = await userReviewService.createReview({
+        user: { id: 210001 }, // TODO: Get from auth context
+        product: { id: product.id },
         rating: reviewForm.rating,
         comment: reviewForm.comment,
-        userId: 1, // TODO: Get from auth context
-        userName: "Khách hàng", // TODO: Get from auth context
       });
 
       setReviews((prevReviews) => [newReview, ...prevReviews]);
@@ -128,6 +159,12 @@ const ProductDetail = () => {
     return stars;
   };
 
+  const calculateAverageRating = () => {
+    if (reviews.length === 0) return 0;
+    const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+    return (totalRating / reviews.length).toFixed(1);
+  };
+
   if (loading) return <div className="text-center p-5">Đang tải...</div>;
   if (error) return <div className="text-center p-5 text-danger">{error}</div>;
   if (!product)
@@ -141,8 +178,8 @@ const ProductDetail = () => {
           <Col md={4}>
             <div className="product-image-container mb-3">
               <img
-                src={product.image}
-                alt={product.name}
+                src={product.coverImage}
+                alt={product.title}
                 className="img-fluid"
               />
               {product.discount > 0 && (
@@ -152,16 +189,14 @@ const ProductDetail = () => {
           </Col>
 
           <Col md={8}>
-            <h1 className="product-title mb-3">{product.name}</h1>
+            <h1 className="product-title mb-3">{product.title}</h1>
             <div className="d-flex align-items-center mb-3">
               <div className="me-3">
-                {renderStars(product.rating.average)}
-                <span className="ms-2">({product.rating.count} đánh giá)</span>
+                {renderStars(calculateAverageRating())}
+                <span className="ms-2">({reviews.length} đánh giá)</span>
               </div>
               <div className="text-muted">|</div>
-              <div className="ms-3">
-                Đã bán: {Math.floor(Math.random() * 1000)}
-              </div>
+              <div className="ms-3">Còn lại: {product.stock} sản phẩm</div>
             </div>
             <div className="price-section mb-4">
               <div className="current-price">
@@ -177,7 +212,22 @@ const ProductDetail = () => {
               )}
             </div>
             <div className="mb-4">
-              <h5>Tác giả: {product.author}</h5>
+              <h5>
+                Tác giả:
+                {product.authors && product.authors.length > 0
+                  ? product.authors.map((author) => author.name).join(", ")
+                  : "Không rõ tác giả"}
+              </h5>
+              {product.category && (
+                <h5>
+                  <strong>Thể loại: </strong> {product.category.name}
+                </h5>
+              )}
+              {product.publisher && (
+                <h5>
+                  <strong>Nhà xuất bản: </strong> {product.publisher.name}
+                </h5>
+              )}
               <p>{product.description}</p>
             </div>
             <div className="quantity-section mb-4">
@@ -210,7 +260,7 @@ const ProductDetail = () => {
                   {product.stock} sản phẩm có sẵn
                 </span>
               </div>
-            </div>{" "}
+            </div>
             <div className="action-buttons">
               <div className="d-flex gap-3">
                 <Button
@@ -221,7 +271,7 @@ const ProductDetail = () => {
                   className="flex-grow-1"
                 >
                   Thêm vào giỏ hàng
-                </Button>{" "}
+                </Button>
                 <Button
                   variant={isInWishlist ? "danger" : "outline-danger"}
                   size="lg"
@@ -257,7 +307,10 @@ const ProductDetail = () => {
             <div className="p-4">
               <div
                 dangerouslySetInnerHTML={{
-                  __html: product.longDescription.replace(/\n/g, "<br/>"),
+                  __html: (product.description || "Chưa có mô tả").replace(
+                    /\n/g,
+                    "<br/>"
+                  ),
                 }}
               />
             </div>
@@ -271,15 +324,18 @@ const ProductDetail = () => {
                 <div className="d-flex align-items-center">
                   <div className="average-rating me-4">
                     <div className="rating-number">
-                      {product.rating.average}
+                      {calculateAverageRating()}
                     </div>
-                    <div>{renderStars(product.rating.average)}</div>
-                    <div>{product.rating.count} đánh giá</div>
+                    <div>{renderStars(calculateAverageRating())}</div>
+                    <div>{reviews.length} đánh giá</div>
                   </div>
                   <div className="rating-bars">
-                    {Object.entries(product.rating.detail)
-                      .reverse()
-                      .map(([stars, count]) => (
+                    {/* Simple rating distribution */}
+                    {[5, 4, 3, 2, 1].map((stars) => {
+                      const count = reviews.filter(
+                        (r) => r.rating === stars
+                      ).length;
+                      return (
                         <div key={stars} className="rating-bar-row">
                           <span>{stars} sao</span>
                           <div className="rating-bar">
@@ -287,14 +343,17 @@ const ProductDetail = () => {
                               className="rating-bar-fill"
                               style={{
                                 width: `${
-                                  (count / product.rating.count) * 100
+                                  reviews.length > 0
+                                    ? (count / reviews.length) * 100
+                                    : 0
                                 }%`,
                               }}
                             ></div>
                           </div>
                           <span>{count}</span>
                         </div>
-                      ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -346,9 +405,15 @@ const ProductDetail = () => {
                 {reviews.map((review) => (
                   <div key={review.id} className="review-item">
                     <div className="review-header">
-                      <h5>{review.userName}</h5>
+                      <h5>{review.user?.name || "Khách hàng"}</h5>
                       <div>{renderStars(review.rating)}</div>
-                      <small className="text-muted">{review.date}</small>
+                      <small className="text-muted">
+                        {review.createdAt
+                          ? new Date(review.createdAt).toLocaleDateString(
+                              "vi-VN"
+                            )
+                          : "Vừa xong"}
+                      </small>
                     </div>
                     <p>{review.comment}</p>
                   </div>
@@ -359,20 +424,20 @@ const ProductDetail = () => {
         </Tabs>
 
         {/* Related Products */}
-        {product.relatedProducts.length > 0 && (
+        {relatedProducts.length > 0 && (
           <div className="related-products">
             <h3 className="mb-4">Sản phẩm liên quan</h3>
             <Row>
-              {product.relatedProducts.map((relatedProduct) => (
+              {relatedProducts.map((relatedProduct) => (
                 <Col key={relatedProduct.id} md={3} sm={6} className="mb-4">
                   <Link
-                    to={`/product/${relatedProduct.id}`}
+                    to={`/product/${relatedProduct.slug || relatedProduct.id}`}
                     className="related-product-card"
                   >
                     <div className="product-image-wrapper">
                       <img
-                        src={relatedProduct.image}
-                        alt={relatedProduct.name}
+                        src={relatedProduct.coverImage}
+                        alt={relatedProduct.title}
                         className="product-image"
                       />
                       {relatedProduct.discount > 0 && (
@@ -382,8 +447,11 @@ const ProductDetail = () => {
                       )}
                     </div>
                     <div className="product-info">
-                      <h5 className="product-title" title={relatedProduct.name}>
-                        {relatedProduct.name}
+                      <h5
+                        className="product-title"
+                        title={relatedProduct.title}
+                      >
+                        {relatedProduct.title}
                       </h5>
                       <div className="product-price">
                         {(

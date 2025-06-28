@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Container, Row, Col, Form, Card } from "react-bootstrap";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { allBooks as mockBooks } from "../../../../services/mockBooks";
-import { getAllCategories } from "../../../../services/categoryService";
-import { getAllPublishers } from "../../../../services/publisherService";
+import { userProductService } from "../../../../services/userProductService";
+import { userCategoryService } from "../../../../services/userCategoryService";
+import { userPublisherService } from "../../../../services/userPublisherService";
 import "./DetailSearch.css";
 
 const ITEMS_PER_PAGE = 48;
@@ -12,8 +12,11 @@ function DetailSearch() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
+  const [allProducts, setAllProducts] = useState([]); // Store all products for filtering
   const [categories, setCategories] = useState([]);
   const [publishers, setPublishers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({
     categoryId: "",
@@ -24,67 +27,115 @@ function DetailSearch() {
   });
 
   // Get initial search query from URL
-  const searchQuery = searchParams.get("q") || "";
+  const searchQuery = searchParams.get("name") || "";
 
+  // Initial data fetch
   useEffect(() => {
-    // Simulate API call with filters
-    const filteredProducts = mockBooks.filter((book) => {
-      const matchesSearch =
-        book.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        book.description.toLowerCase().includes(searchQuery.toLowerCase());
-
-      const matchesCategory =
-        !filters.categoryId || book.categoryId === Number(filters.categoryId);
-      const matchesPublisher =
-        !filters.publisherId ||
-        book.publisherId === Number(filters.publisherId);
-      const matchesMinPrice =
-        !filters.minPrice || book.price >= Number(filters.minPrice);
-      const matchesMaxPrice =
-        !filters.maxPrice || book.price <= Number(filters.maxPrice);
-
-      return (
-        matchesSearch &&
-        matchesCategory &&
-        matchesPublisher &&
-        matchesMinPrice &&
-        matchesMaxPrice
-      );
-    });
-
-    // Apply sorting
-    const sortedProducts = [...filteredProducts].sort((a, b) => {
-      switch (filters.sort) {
-        case "priceAsc":
-          return a.price - b.price;
-        case "priceDesc":
-          return b.price - a.price;
-        case "discount":
-          return (b.discount || 0) - (a.discount || 0);
-        default: // newest
-          return new Date(b.publishDate) - new Date(a.publishDate);
-      }
-    });
-
-    setProducts(sortedProducts);
-  }, [searchQuery, filters]);
-
-  // Fetch categories and publishers on component mount
-  useEffect(() => {
-    const fetchData = async () => {
+    const fetchInitialData = async () => {
       try {
-        const [categoriesData, publishersData] = await Promise.all([
-          getAllCategories(),
-          getAllPublishers(),
-        ]);
-        setCategories(categoriesData);
-        setPublishers(publishersData);
+        setLoading(true);
+        setError(null);
+
+        // Fetch all products, categories, and publishers
+        const [allProductsData, categoriesData, publishersData] =
+          await Promise.all([
+            userProductService.getAllProducts(),
+            userCategoryService.getAllCategories(),
+            userPublisherService.getAllPublishers(),
+          ]);
+
+        setAllProducts(allProductsData || []);
+        setCategories(categoriesData || []);
+        setPublishers(publishersData || []);
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching initial data:", error);
+        setError("Không thể tải dữ liệu. Vui lòng thử lại sau.");
+      } finally {
+        setLoading(false);
       }
     };
-    fetchData();
+
+    fetchInitialData();
   }, []);
+
+  // Filter and search products
+  useEffect(() => {
+    const filterProducts = async () => {
+      try {
+        let filteredProducts = [];
+
+        // If there's a search query, use search API
+        if (searchQuery.trim()) {
+          try {
+            filteredProducts = await userProductService.searchProducts(
+              searchQuery
+            );
+          } catch (error) {
+            console.error("Search API error:", error);
+            // Fallback to local filtering if search API fails
+            filteredProducts = allProducts.filter(
+              (product) =>
+                product.title
+                  .toLowerCase()
+                  .includes(searchQuery.toLowerCase()) ||
+                product.description
+                  .toLowerCase()
+                  .includes(searchQuery.toLowerCase())
+            );
+          }
+        } else {
+          // No search query, use all products
+          filteredProducts = [...allProducts];
+        }
+
+        // Apply additional filters
+        filteredProducts = filteredProducts.filter((product) => {
+          const matchesCategory =
+            !filters.categoryId ||
+            product.categoryId === Number(filters.categoryId);
+          const matchesPublisher =
+            !filters.publisherId ||
+            product.publisherId === Number(filters.publisherId);
+          const matchesMinPrice =
+            !filters.minPrice || product.price >= Number(filters.minPrice);
+          const matchesMaxPrice =
+            !filters.maxPrice || product.price <= Number(filters.maxPrice);
+
+          return (
+            matchesCategory &&
+            matchesPublisher &&
+            matchesMinPrice &&
+            matchesMaxPrice
+          );
+        });
+
+        // Apply sorting
+        const sortedProducts = [...filteredProducts].sort((a, b) => {
+          switch (filters.sort) {
+            case "priceAsc":
+              return a.price - b.price;
+            case "priceDesc":
+              return b.price - a.price;
+            case "discount":
+              return (b.discount || 0) - (a.discount || 0);
+            default: // newest
+              return b.id - a.id; // Use ID as proxy for newest since we don't have publishDate
+          }
+        });
+
+        setProducts(sortedProducts);
+        setCurrentPage(1); // Reset to first page when filters change
+      } catch (error) {
+        console.error("Error filtering products:", error);
+        setProducts([]);
+      }
+    };
+
+    // Only filter if we have initial data
+    if (allProducts.length > 0) {
+      filterProducts();
+    }
+  }, [searchQuery, filters, allProducts]);
 
   const handleFilterChange = (name, value) => {
     setFilters((prev) => ({ ...prev, [name]: value }));
@@ -146,12 +197,28 @@ function DetailSearch() {
     );
   };
 
-  const handleProductClick = (productId) => {
-    navigate(`/product/${productId}`);
+  const handleProductClick = (product) => {
+    // Prefer slug over ID for better URLs
+    const identifier = product.slug || product.id;
+    navigate(`/product/${identifier}`);
   };
 
   return (
     <Container fluid className="my-4">
+      {loading && (
+        <div className="text-center p-5">
+          <div className="spinner-border" role="status">
+            <span className="visually-hidden">Đang tải...</span>
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="alert alert-danger text-center" role="alert">
+          {error}
+        </div>
+      )}
+
       <Row>
         {/* Filters Sidebar */}
         <Col md={3} className="filter-sidebar">
@@ -242,32 +309,42 @@ function DetailSearch() {
                 <h5 className="mb-0">
                   {searchQuery
                     ? `Kết quả tìm kiếm cho "${searchQuery}"`
-                    : "Tất cả sản phẩm"}{" "}
+                    : "Tất cả sản phẩm"}
                   <span className="text-muted ms-2">
                     ({products.length} sản phẩm)
                   </span>
                 </h5>
               </div>
 
+              {products.length === 0 && !loading && (
+                <div className="text-center p-5">
+                  <p className="text-muted">
+                    {searchQuery
+                      ? `Không tìm thấy sản phẩm nào cho "${searchQuery}"`
+                      : "Không có sản phẩm nào"}
+                  </p>
+                </div>
+              )}
+
               <div className="product-grid">
                 {currentItems.map((product) => (
                   <div
                     key={product.id}
                     className="product-card"
-                    onClick={() => handleProductClick(product.id)}
+                    onClick={() => handleProductClick(product)}
                     role="button"
                     tabIndex={0}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
-                        handleProductClick(product.id);
+                        handleProductClick(product);
                       }
                     }}
                   >
                     <div className="product-image-wrapper">
                       <img
-                        src={product.image}
-                        alt={product.name}
+                        src={product.coverImage}
+                        alt={product.title}
                         className="product-image"
                       />
                       {product.discount > 0 && (
@@ -276,10 +353,16 @@ function DetailSearch() {
                         </span>
                       )}
                     </div>
-                    <h3 className="product-title" title={product.name}>
-                      {product.name}
+                    <h3 className="product-title" title={product.title}>
+                      {product.title}
                     </h3>
-                    <p className="product-author">{product.author}</p>
+                    <p className="product-author">
+                      {product.authors && product.authors.length > 0
+                        ? product.authors
+                            .map((author) => author.name)
+                            .join(", ")
+                        : "Không rõ tác giả"}
+                    </p>
                     <div className="price-container">
                       <p className="product-price">
                         {(

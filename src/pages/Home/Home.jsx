@@ -4,7 +4,7 @@ import BannerCarousel from "./components/BannerCarousel/BannerCarousel";
 import ProductGrid from "./components/ProductGrid/ProductGrid";
 import { Container } from "react-bootstrap";
 import "./Home.css";
-import { bookService } from "../../services/bookService";
+import { userProductService } from "../../services/userProductService";
 import {
   FaArrowTrendUp,
   FaPercent,
@@ -16,9 +16,9 @@ import { Link } from "react-router-dom";
 function Home() {
   return (
     <div className="home-wrapper">
-      {/* <Container>
+      <Container>
         <CategoryBar />
-      </Container> */}
+      </Container>
       <Container>
         <BannerCarousel />
       </Container>
@@ -27,7 +27,7 @@ function Home() {
           <ProductGrid
             title="Sản phẩm nổi bật"
             icon={FaArrowTrendUp}
-            fetchBooks={bookService.getFeaturedBooks}
+            fetchBooks={userProductService.getFeaturedProducts}
             type="featured"
             className="mb-4"
           />
@@ -42,7 +42,7 @@ function Home() {
           <ProductGrid
             title="Giảm giá sốc"
             icon={FaPercent}
-            fetchBooks={bookService.getBestDiscountBooks}
+            fetchBooks={userProductService.getBestDiscountProducts}
             type="discount"
             className="mb-4"
           />
@@ -57,7 +57,7 @@ function Home() {
           <ProductGrid
             title="Sách mới"
             icon={FaBookOpen}
-            fetchBooks={bookService.getNewBooks}
+            fetchBooks={userProductService.getNewProducts}
             type="new"
             className="mb-4"
           />
@@ -72,7 +72,7 @@ function Home() {
           <ProductGrid
             title="Gợi ý hôm nay"
             icon={FaShuffle}
-            fetchBooks={bookService.getDailyBooks}
+            fetchBooks={userProductService.getDailyProducts}
             type="daily"
             className="mb-4"
           />

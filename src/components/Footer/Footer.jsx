@@ -13,7 +13,7 @@ function Footer() {
             md={2}
             className="d-flex justify-content-center align-items-center"
           >
-            <img src="/vite.svg" width="120" alt="Fahanear" />
+            <img src="/logo.svg" width="120" alt="Fahanear" />
           </Col>
           <Col md={2}>
             <h6>Về chúng tôi</h6>

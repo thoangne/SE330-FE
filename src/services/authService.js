@@ -199,9 +199,23 @@ export const getUserInfo = async () => {
   }
 };
 
-export const updateUserInfo = async (userData) => {
+export const updateUserInfo = async (userData, userId) => {
   try {
-    const response = await httpClient.put(ENDPOINTS.USERS_UPDATE, userData);
+    // Use userId from parameter or get from stored user data
+    const userIdToUse = userId || JSON.parse(localStorage.getItem("user"))?.id;
+
+    if (!userIdToUse) {
+      return {
+        success: false,
+        data: null,
+        message: "Không tìm thấy thông tin user để cập nhật",
+      };
+    }
+
+    const response = await httpClient.put(
+      `${ENDPOINTS.USERS_UPDATE}/${userIdToUse}`,
+      userData
+    );
 
     if (response.data && response.status === 200) {
       return {
@@ -227,6 +241,35 @@ export const updateUserInfo = async (userData) => {
   }
 };
 
+export const getUserById = async (userId) => {
+  try {
+    const response = await httpClient.get(`/users/${userId}`);
+
+    if (response.data && response.status === 200) {
+      return {
+        success: true,
+        data: response.data,
+        message: "Lấy thông tin người dùng thành công",
+      };
+    }
+
+    return {
+      success: false,
+      data: null,
+      message: response.data?.message || "Không thể lấy thông tin người dùng",
+    };
+  } catch (error) {
+    console.error("Get user by ID error:", error);
+    return {
+      success: false,
+      data: null,
+      message:
+        error.response?.data?.message ||
+        "Có lỗi xảy ra khi lấy thông tin người dùng",
+    };
+  }
+};
+
 const authService = {
   login,
   logout,
@@ -234,6 +277,7 @@ const authService = {
   resetPassword,
   getUserInfo,
   updateUserInfo,
+  getUserById,
 };
 
 export default authService;

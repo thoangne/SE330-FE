@@ -17,7 +17,7 @@ export const ENDPOINTS = {
   FORGOT_PASSWORD: "/auth/forgot-password",
   RESET_PASSWORD: "/auth/reset-password",
   USER_INFO: "/users/me",
-  USERS_UPDATE: "/users/update",
+  USERS_UPDATE: "/users",
 };
 
 const httpClient = axios.create({
