@@ -1,15 +1,16 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Container,
   Table,
   Pagination,
   Form,
   Button,
-  Image,
   InputGroup,
   Modal,
   Row,
   Col,
+  Spinner,
+  Alert,
 } from "react-bootstrap";
 import {
   FaSearch,
@@ -20,46 +21,32 @@ import {
   FaSortDown,
   FaPlus,
 } from "react-icons/fa";
+import useUserStore from "../../../stores/useUserStore";
 
 const UsersManager = () => {
-  // Dữ liệu mẫu
-  const initialBooks = [
-    {
-      id: 1,
-      image: "https://via.placeholder.com/50",
-      name: "Book One",
-      author: "John Doe",
-      category: "Fiction",
-      quantity: 100,
-      description: "A thrilling adventure novel.",
-      discount: 10,
-    },
-    {
-      id: 2,
-      image: "https://via.placeholder.com/50",
-      name: "Book Two",
-      author: "Jane Smith",
-      category: "Non-Fiction",
-      quantity: 50,
-      description: "A guide to productivity.",
-      discount: 20,
-    },
-    // ... các bản ghi khác
-  ];
+  const {
+    fetchUsers,
+    users,
+    addUser,
+    updateUser,
+    deleteUser,
+    isLoading,
+    error,
+  } = useUserStore();
 
-  // State
-  const [books, setBooks] = useState(initialBooks);
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // Modal states
   const [showAdd, setShowAdd] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
-  const [editingBook, setEditingBook] = useState(null);
+  const [editingUser, setEditingUser] = useState(null);
 
-  // Handlers
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
     setCurrentPage(1);
@@ -72,26 +59,28 @@ const UsersManager = () => {
     setSortConfig({ key, direction });
   };
 
-  const handleEditClick = (book) => {
-    setEditingBook(book);
-    setShowEdit(true);
-  };
+  const getSortIcon = (key) =>
+    sortConfig.key !== key ? (
+      <FaSort className="ms-1" />
+    ) : sortConfig.direction === "asc" ? (
+      <FaSortUp className="ms-1" />
+    ) : (
+      <FaSortDown className="ms-1" />
+    );
 
-  const handleAddClick = () => setShowAdd(true);
   const handleAddSubmit = (e) => {
     e.preventDefault();
     const form = e.target;
-    const newBook = {
+    const newUser = {
       id: Date.now(),
-      image: form.image.value,
       name: form.name.value,
-      author: form.author.value,
-      category: form.category.value,
-      quantity: parseInt(form.quantity.value, 10),
-      description: form.description.value,
-      discount: parseInt(form.discount.value, 10),
+      email: form.email.value,
+      phone: form.phone.value,
+      address: form.address.value,
+      point: Number(form.point.value) || 0,
+      role: form.role.value,
     };
-    setBooks([newBook, ...books]);
+    addUser(newUser);
     setShowAdd(false);
   };
 
@@ -99,87 +88,75 @@ const UsersManager = () => {
     e.preventDefault();
     const form = e.target;
     const updated = {
-      ...editingBook,
-      image: form.image.value,
+      ...editingUser,
       name: form.name.value,
-      author: form.author.value,
-      category: form.category.value,
-      quantity: parseInt(form.quantity.value, 10),
-      description: form.description.value,
-      discount: parseInt(form.discount.value, 10),
+      email: form.email.value,
+      phone: form.phone.value,
+      address: form.address.value,
+      point: Number(form.point.value) || 0,
+      role: form.role.value,
     };
-    setBooks(books.map((b) => (b.id === updated.id ? updated : b)));
+    updateUser(updated);
     setShowEdit(false);
   };
+
   const handleDelete = (id) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa người dùng này?")) {
-      setBooks(books.filter((book) => book.id !== id));
+    if (window.confirm("Bạn có chắc chắn muốn xoá người dùng này?")) {
+      deleteUser(id);
     }
   };
 
-  // Filtering
-  const filteredBooks = useMemo(
+  const filtered = useMemo(
     () =>
-      books.filter(
-        (book) =>
-          book.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          book.author.toLowerCase().includes(searchTerm.toLowerCase())
+      users.filter(
+        (u) =>
+          u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          u.email.toLowerCase().includes(searchTerm.toLowerCase())
       ),
-    [books, searchTerm]
+    [users, searchTerm]
   );
 
-  // Sorting
-  const sortedBooks = useMemo(() => {
-    if (!sortConfig.key) return filteredBooks;
-    return [...filteredBooks].sort((a, b) => {
+  const sorted = useMemo(() => {
+    if (!sortConfig.key) return filtered;
+    return [...filtered].sort((a, b) => {
       if (a[sortConfig.key] < b[sortConfig.key])
         return sortConfig.direction === "asc" ? -1 : 1;
       if (a[sortConfig.key] > b[sortConfig.key])
         return sortConfig.direction === "asc" ? 1 : -1;
       return 0;
     });
-  }, [filteredBooks, sortConfig]);
+  }, [filtered, sortConfig]);
 
-  // Pagination
   const indexOfLast = currentPage * itemsPerPage;
-  const indexOfFirst = indexOfLast - itemsPerPage;
-  const currentBooks = sortedBooks.slice(indexOfFirst, indexOfLast);
-  const totalPages = Math.ceil(sortedBooks.length / itemsPerPage);
-
-  const paginationItems = [];
-  for (let i = 1; i <= totalPages; i++) {
-    paginationItems.push(
-      <Pagination.Item
-        key={i}
-        active={i === currentPage}
-        onClick={() => setCurrentPage(i)}
-      >
-        {i}
-      </Pagination.Item>
+  const currentUsers = sorted.slice(indexOfLast - itemsPerPage, indexOfLast);
+  const totalPages = Math.ceil(sorted.length / itemsPerPage);
+  const paginationItems = Array.from({ length: totalPages }, (_, i) => (
+    <Pagination.Item
+      key={i + 1}
+      active={i + 1 === currentPage}
+      onClick={() => setCurrentPage(i + 1)}
+    >
+      {i + 1}
+    </Pagination.Item>
+  ));
+  if (isLoading) {
+    return (
+      <div className="d-flex justify-content-center">
+        <Spinner animation="border" role="status" />
+      </div>
     );
   }
-
-  const getSortIcon = (key) => {
-    if (sortConfig.key !== key) return <FaSort className="ms-1" />;
-    return sortConfig.direction === "asc" ? (
-      <FaSortUp className="ms-1" />
-    ) : (
-      <FaSortDown className="ms-1" />
-    );
-  };
 
   return (
     <Container fluid className="p-0">
       <div className="card shadow-sm border-0">
-        {" "}
         <div className="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
           <h3 className="card-title mb-0">Quản lý người dùng</h3>
           <div className="d-flex gap-2">
-            <Form className="d-flex" style={{ maxWidth: "300px" }}>
+            <Form style={{ maxWidth: 300 }}>
               <InputGroup>
                 <Form.Control
-                  type="text"
-                  placeholder="Tìm kiếm theo tên"
+                  placeholder="Tìm kiếm theo tên hoặc email"
                   value={searchTerm}
                   onChange={handleSearch}
                 />
@@ -188,80 +165,91 @@ const UsersManager = () => {
                 </InputGroup.Text>
               </InputGroup>
             </Form>
-            <Button variant="success" onClick={handleAddClick}>
-              <FaPlus /> Thêm người dùng
+            <Button variant="success" onClick={() => setShowAdd(true)}>
+              <FaPlus className="me-1" /> Thêm người dùng
             </Button>
           </div>
         </div>
+
         <div className="card-body">
-          <Table responsive bordered striped hover>
-            <thead>
-              <tr>
-                <th>Image</th>
-                <th className="sortable" onClick={() => handleSort("name")}>
-                  Name {getSortIcon("name")}
-                </th>
-                <th>Author</th>
-                <th>Category</th>
-                <th className="sortable" onClick={() => handleSort("quantity")}>
-                  Quantity {getSortIcon("quantity")}
-                </th>
-                <th>Description</th>
-                <th className="sortable" onClick={() => handleSort("discount")}>
-                  Discount (%) {getSortIcon("discount")}
-                </th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentBooks.map((book) => (
-                <tr key={book.id}>
-                  <td>
-                    <Image
-                      src={book.image}
-                      alt={book.name}
-                      width={50}
-                      height={50}
-                      rounded
-                    />
-                  </td>
-                  <td>{book.name}</td>
-                  <td>{book.author}</td>
-                  <td>{book.category}</td>
-                  <td>{book.quantity}</td>
-                  <td className="text-truncate" style={{ maxWidth: "150px" }}>
-                    {book.description}
-                  </td>
-                  <td>{book.discount}</td>
-                  <td>
-                    <Button
-                      variant="outline-primary"
-                      size="sm"
-                      className="me-2"
-                      onClick={() => handleEditClick(book)}
+          {error && <Alert variant="danger">{error}</Alert>}
+
+          {!isLoading && !error && (
+            <>
+              <Table responsive bordered striped hover>
+                <thead>
+                  <tr>
+                    <th className="sortable" onClick={() => handleSort("id")}>
+                      ID {getSortIcon("id")}
+                    </th>
+                    <th className="sortable" onClick={() => handleSort("name")}>
+                      Tên {getSortIcon("name")}
+                    </th>
+                    <th
+                      className="sortable"
+                      onClick={() => handleSort("email")}
                     >
-                      <FaEdit />
-                    </Button>
-                    <Button
-                      variant="outline-danger"
-                      size="sm"
-                      onClick={() => handleDelete(book.id)}
+                      Email {getSortIcon("email")}
+                    </th>
+                    <th>Điện thoại</th>
+                    <th>Địa chỉ</th>
+                    <th
+                      className="sortable"
+                      onClick={() => handleSort("point")}
                     >
-                      <FaTrash />
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-          {totalPages > 1 && (
-            <div className="d-flex justify-content-end mt-3">
-              <Pagination>{paginationItems}</Pagination>
-            </div>
+                      Điểm {getSortIcon("point")}
+                    </th>
+                    <th>Vai trò</th>
+                    <th style={{ width: 120 }}>Hành động</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentUsers.map((u) => (
+                    <tr key={u.id}>
+                      <td>{u.id}</td>
+                      <td>{u.name}</td>
+                      <td>{u.email}</td>
+                      <td>{u.phone}</td>
+                      <td className="text-truncate" style={{ maxWidth: 180 }}>
+                        {u.address}
+                      </td>
+                      <td>{u.point}</td>
+                      <td>{u.role}</td>
+                      <td>
+                        <Button
+                          variant="outline-primary"
+                          size="sm"
+                          className="me-2"
+                          onClick={() => {
+                            setEditingUser(u);
+                            setShowEdit(true);
+                          }}
+                        >
+                          <FaEdit />
+                        </Button>
+                        <Button
+                          variant="outline-danger"
+                          size="sm"
+                          onClick={() => handleDelete(u.id)}
+                        >
+                          <FaTrash />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+              {totalPages > 1 && (
+                <div className="d-flex justify-content-end mt-3">
+                  <Pagination>{paginationItems}</Pagination>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
-      {/* Add Modal */}
+
+      {/* Add User Modal */}
       <Modal show={showAdd} onHide={() => setShowAdd(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Thêm người dùng mới</Modal.Title>
@@ -269,166 +257,119 @@ const UsersManager = () => {
         <Form onSubmit={handleAddSubmit}>
           <Modal.Body>
             <Row className="mb-3">
-              <Form.Group as={Col} controlId="image">
-                <Form.Label>URL avatar</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="image"
-                  placeholder="Nhập URL avatar"
-                  required
-                />
-              </Form.Group>
-            </Row>
-            <Row className="mb-3">
               <Form.Group as={Col} controlId="name">
-                <Form.Label>Tên người dùng</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="name"
-                  placeholder="Nhập tên người dùng"
-                  required
-                />
+                <Form.Label>Tên</Form.Label>
+                <Form.Control name="name" required />
               </Form.Group>
-              <Form.Group as={Col} controlId="author">
+              <Form.Group as={Col} controlId="email">
                 <Form.Label>Email</Form.Label>
-                <Form.Control
-                  type="email"
-                  name="author"
-                  placeholder="Nhập email"
-                  required
-                />
+                <Form.Control type="email" name="email" required />
               </Form.Group>
             </Row>
-            <Form.Group controlId="category" className="mb-3">
-              <Form.Label>Vai trò</Form.Label>
-              <Form.Control as="select" name="category" required>
-                <option value="">Chọn vai trò</option>
-                <option value="user">Người dùng</option>
-                <option value="admin">Quản trị viên</option>
-              </Form.Control>
-            </Form.Group>
             <Row className="mb-3">
-              <Form.Group as={Col} controlId="quantity">
-                <Form.Label>Số điện thoại</Form.Label>
+              <Form.Group as={Col} controlId="phone">
+                <Form.Label>Điện thoại</Form.Label>
+                <Form.Control name="phone" />
+              </Form.Group>
+              <Form.Group as={Col} controlId="point">
+                <Form.Label>Điểm</Form.Label>
                 <Form.Control
-                  type="text"
-                  name="quantity"
-                  placeholder="Nhập số điện thoại"
-                  required
+                  type="number"
+                  name="point"
+                  defaultValue={0}
+                  min={0}
                 />
               </Form.Group>
-              <Form.Group as={Col} controlId="discount">
-                <Form.Label>Trạng thái</Form.Label>
-                <Form.Control as="select" name="discount" required>
-                  <option value="active">Hoạt động</option>
-                  <option value="inactive">Vô hiệu hóa</option>
-                </Form.Control>
-              </Form.Group>
             </Row>
-            <Form.Group controlId="description" className="mb-3">
-              <Form.Label>Ghi chú</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                name="description"
-                placeholder="Nhập ghi chú"
-              />
+            <Form.Group className="mb-3" controlId="address">
+              <Form.Label>Địa chỉ</Form.Label>
+              <Form.Control name="address" />
+            </Form.Group>
+            <Form.Group className="mb-3" controlId="role">
+              <Form.Label>Vai trò</Form.Label>
+              <Form.Select name="role" defaultValue="USER" required>
+                <option value="USER">USER</option>
+                <option value="ADMIN">ADMIN</option>
+              </Form.Select>
             </Form.Group>
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={() => setShowAdd(false)}>
-              Hủy
+              Huỷ
             </Button>
             <Button type="submit" variant="primary">
-              Thêm người dùng
+              Thêm
             </Button>
           </Modal.Footer>
         </Form>
       </Modal>
-      {/* Edit Modal */}
+
+      {/* Edit User Modal */}
       <Modal show={showEdit} onHide={() => setShowEdit(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Chỉnh sửa người dùng</Modal.Title>
         </Modal.Header>
-        {editingBook && (
+        {editingUser && (
           <Form onSubmit={handleEditSubmit}>
             <Modal.Body>
               <Row className="mb-3">
-                <Form.Group as={Col} controlId="image">
-                  <Form.Label>Image URL</Form.Label>
+                <Form.Group as={Col} controlId="nameEdit">
+                  <Form.Label>Tên</Form.Label>
                   <Form.Control
-                    type="text"
-                    name="image"
-                    defaultValue={editingBook.image}
+                    name="name"
+                    defaultValue={editingUser.name}
+                    required
+                  />
+                </Form.Group>
+                <Form.Group as={Col} controlId="emailEdit">
+                  <Form.Label>Email</Form.Label>
+                  <Form.Control
+                    type="email"
+                    name="email"
+                    defaultValue={editingUser.email}
                     required
                   />
                 </Form.Group>
               </Row>
               <Row className="mb-3">
-                <Form.Group as={Col} controlId="name">
-                  <Form.Label>Name</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="name"
-                    defaultValue={editingBook.name}
-                    required
-                  />
+                <Form.Group as={Col} controlId="phoneEdit">
+                  <Form.Label>Điện thoại</Form.Label>
+                  <Form.Control name="phone" defaultValue={editingUser.phone} />
                 </Form.Group>
-                <Form.Group as={Col} controlId="author">
-                  <Form.Label>Author</Form.Label>
+                <Form.Group as={Col} controlId="pointEdit">
+                  <Form.Label>Điểm</Form.Label>
                   <Form.Control
-                    type="text"
-                    name="author"
-                    defaultValue={editingBook.author}
-                    required
+                    type="number"
+                    name="point"
+                    defaultValue={editingUser.point}
                   />
                 </Form.Group>
               </Row>
-              <Form.Group controlId="category" className="mb-3">
-                <Form.Label>Category</Form.Label>
+              <Form.Group className="mb-3" controlId="addressEdit">
+                <Form.Label>Địa chỉ</Form.Label>
                 <Form.Control
-                  type="text"
-                  name="category"
-                  defaultValue={editingBook.category}
-                  required
+                  name="address"
+                  defaultValue={editingUser.address}
                 />
               </Form.Group>
-              <Row className="mb-3">
-                <Form.Group as={Col} controlId="quantity">
-                  <Form.Label>Quantity</Form.Label>
-                  <Form.Control
-                    type="number"
-                    name="quantity"
-                    defaultValue={editingBook.quantity}
-                    required
-                  />
-                </Form.Group>
-                <Form.Group as={Col} controlId="discount">
-                  <Form.Label>Discount (%)</Form.Label>
-                  <Form.Control
-                    type="number"
-                    name="discount"
-                    defaultValue={editingBook.discount}
-                    required
-                  />
-                </Form.Group>
-              </Row>
-              <Form.Group controlId="description" className="mb-3">
-                <Form.Label>Description</Form.Label>
-                <Form.Control
-                  as="textarea"
-                  rows={3}
-                  name="description"
-                  defaultValue={editingBook.description}
-                />
+              <Form.Group className="mb-3" controlId="roleEdit">
+                <Form.Label>Vai trò</Form.Label>
+                <Form.Select
+                  name="role"
+                  defaultValue={editingUser.role}
+                  required
+                >
+                  <option value="USER">USER</option>
+                  <option value="ADMIN">ADMIN</option>
+                </Form.Select>
               </Form.Group>
             </Modal.Body>
             <Modal.Footer>
               <Button variant="secondary" onClick={() => setShowEdit(false)}>
-                Hủy
+                Huỷ
               </Button>
               <Button type="submit" variant="primary">
-                Lưu thay đổi
+                Lưu
               </Button>
             </Modal.Footer>
           </Form>

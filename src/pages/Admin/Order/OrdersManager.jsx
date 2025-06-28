@@ -1,15 +1,16 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Container,
   Table,
   Pagination,
   Form,
   Button,
-  Image,
   InputGroup,
   Modal,
   Row,
   Col,
+  Spinner,
+  Alert,
 } from "react-bootstrap";
 import {
   FaSearch,
@@ -20,46 +21,32 @@ import {
   FaSortDown,
   FaPlus,
 } from "react-icons/fa";
+import useOrderStore from "../../../stores/useOrderStore";
 
 const OrdersManager = () => {
-  // Dữ liệu mẫu
-  const initialBooks = [
-    {
-      id: 1,
-      image: "https://via.placeholder.com/50",
-      name: "Book One",
-      author: "John Doe",
-      category: "Fiction",
-      quantity: 100,
-      description: "A thrilling adventure novel.",
-      discount: 10,
-    },
-    {
-      id: 2,
-      image: "https://via.placeholder.com/50",
-      name: "Book Two",
-      author: "Jane Smith",
-      category: "Non-Fiction",
-      quantity: 50,
-      description: "A guide to productivity.",
-      discount: 20,
-    },
-    // ... các bản ghi khác
-  ];
+  const {
+    fetchOrders,
+    orders,
+    addOrder,
+    updateOrder,
+    deleteOrder,
+    isLoading,
+    error,
+  } = useOrderStore();
 
-  // State
-  const [books, setBooks] = useState(initialBooks);
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // Modal states
   const [showAdd, setShowAdd] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
-  const [editingBook, setEditingBook] = useState(null);
+  const [editingOrder, setEditingOrder] = useState(null);
 
-  // Handlers
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
     setCurrentPage(1);
@@ -72,26 +59,27 @@ const OrdersManager = () => {
     setSortConfig({ key, direction });
   };
 
-  const handleEditClick = (book) => {
-    setEditingBook(book);
-    setShowEdit(true);
-  };
+  const getSortIcon = (key) =>
+    sortConfig.key !== key ? (
+      <FaSort className="ms-1" />
+    ) : sortConfig.direction === "asc" ? (
+      <FaSortUp className="ms-1" />
+    ) : (
+      <FaSortDown className="ms-1" />
+    );
 
-  const handleAddClick = () => setShowAdd(true);
   const handleAddSubmit = (e) => {
     e.preventDefault();
     const form = e.target;
-    const newBook = {
+    const newOrder = {
       id: Date.now(),
-      image: form.image.value,
-      name: form.name.value,
-      author: form.author.value,
-      category: form.category.value,
-      quantity: parseInt(form.quantity.value, 10),
-      description: form.description.value,
-      discount: parseInt(form.discount.value, 10),
+      userName: form.userName.value,
+      status: form.status.value,
+      totalAmount: Number(form.totalAmount.value),
+      payment: form.payment.value,
+      address: form.address.value,
     };
-    setBooks([newBook, ...books]);
+    addOrder(newOrder);
     setShowAdd(false);
   };
 
@@ -99,74 +87,56 @@ const OrdersManager = () => {
     e.preventDefault();
     const form = e.target;
     const updated = {
-      ...editingBook,
-      image: form.image.value,
-      name: form.name.value,
-      author: form.author.value,
-      category: form.category.value,
-      quantity: parseInt(form.quantity.value, 10),
-      description: form.description.value,
-      discount: parseInt(form.discount.value, 10),
+      ...editingOrder,
+      userName: form.userName.value,
+      status: form.status.value,
+      totalAmount: Number(form.totalAmount.value),
+      payment: form.payment.value,
+      address: form.address.value,
     };
-    setBooks(books.map((b) => (b.id === updated.id ? updated : b)));
+    updateOrder(updated);
     setShowEdit(false);
   };
+
   const handleDelete = (id) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa đơn hàng này?")) {
-      setBooks(books.filter((book) => book.id !== id));
+    if (window.confirm("Bạn có chắc chắn muốn xoá đơn hàng này?")) {
+      deleteOrder(id);
     }
   };
 
-  // Filtering
-  const filteredBooks = useMemo(
+  const filtered = useMemo(
     () =>
-      books.filter(
-        (book) =>
-          book.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          book.author.toLowerCase().includes(searchTerm.toLowerCase())
+      orders.filter(
+        (o) =>
+          o.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          o.status.toLowerCase().includes(searchTerm.toLowerCase())
       ),
-    [books, searchTerm]
+    [orders, searchTerm]
   );
 
-  // Sorting
-  const sortedBooks = useMemo(() => {
-    if (!sortConfig.key) return filteredBooks;
-    return [...filteredBooks].sort((a, b) => {
+  const sorted = useMemo(() => {
+    if (!sortConfig.key) return filtered;
+    return [...filtered].sort((a, b) => {
       if (a[sortConfig.key] < b[sortConfig.key])
         return sortConfig.direction === "asc" ? -1 : 1;
       if (a[sortConfig.key] > b[sortConfig.key])
         return sortConfig.direction === "asc" ? 1 : -1;
       return 0;
     });
-  }, [filteredBooks, sortConfig]);
+  }, [filtered, sortConfig]);
 
-  // Pagination
   const indexOfLast = currentPage * itemsPerPage;
-  const indexOfFirst = indexOfLast - itemsPerPage;
-  const currentBooks = sortedBooks.slice(indexOfFirst, indexOfLast);
-  const totalPages = Math.ceil(sortedBooks.length / itemsPerPage);
-
-  const paginationItems = [];
-  for (let i = 1; i <= totalPages; i++) {
-    paginationItems.push(
-      <Pagination.Item
-        key={i}
-        active={i === currentPage}
-        onClick={() => setCurrentPage(i)}
-      >
-        {i}
-      </Pagination.Item>
-    );
-  }
-
-  const getSortIcon = (key) => {
-    if (sortConfig.key !== key) return <FaSort className="ms-1" />;
-    return sortConfig.direction === "asc" ? (
-      <FaSortUp className="ms-1" />
-    ) : (
-      <FaSortDown className="ms-1" />
-    );
-  };
+  const currentOrders = sorted.slice(indexOfLast - itemsPerPage, indexOfLast);
+  const totalPages = Math.ceil(sorted.length / itemsPerPage);
+  const paginationItems = Array.from({ length: totalPages }, (_, i) => (
+    <Pagination.Item
+      key={i + 1}
+      active={i + 1 === currentPage}
+      onClick={() => setCurrentPage(i + 1)}
+    >
+      {i + 1}
+    </Pagination.Item>
+  ));
 
   return (
     <Container fluid className="p-0">
@@ -174,11 +144,10 @@ const OrdersManager = () => {
         <div className="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
           <h3 className="card-title mb-0">Quản lý đơn hàng</h3>
           <div className="d-flex gap-2">
-            <Form className="d-flex" style={{ maxWidth: "300px" }}>
+            <Form style={{ maxWidth: 300 }}>
               <InputGroup>
                 <Form.Control
-                  type="text"
-                  placeholder="Tìm kiếm theo mã đơn hàng..."
+                  placeholder="Tìm kiếm theo tên hoặc trạng thái"
                   value={searchTerm}
                   onChange={handleSearch}
                 />
@@ -187,243 +156,203 @@ const OrdersManager = () => {
                 </InputGroup.Text>
               </InputGroup>
             </Form>
-            <Button variant="success" onClick={handleAddClick}>
-              <FaPlus /> Thêm đơn hàng
+            <Button variant="success" onClick={() => setShowAdd(true)}>
+              <FaPlus className="me-1" /> Thêm đơn hàng
             </Button>
           </div>
         </div>
+
         <div className="card-body">
-          <Table responsive bordered striped hover>
-            <thead>
-              <tr>
-                <th>Image</th>
-                <th className="sortable" onClick={() => handleSort("name")}>
-                  Name {getSortIcon("name")}
-                </th>
-                <th>Author</th>
-                <th>Category</th>
-                <th className="sortable" onClick={() => handleSort("quantity")}>
-                  Quantity {getSortIcon("quantity")}
-                </th>
-                <th>Description</th>
-                <th className="sortable" onClick={() => handleSort("discount")}>
-                  Discount (%) {getSortIcon("discount")}
-                </th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentBooks.map((book) => (
-                <tr key={book.id}>
-                  <td>
-                    <Image
-                      src={book.image}
-                      alt={book.name}
-                      width={50}
-                      height={50}
-                      rounded
-                    />
-                  </td>
-                  <td>{book.name}</td>
-                  <td>{book.author}</td>
-                  <td>{book.category}</td>
-                  <td>{book.quantity}</td>
-                  <td className="text-truncate" style={{ maxWidth: "150px" }}>
-                    {book.description}
-                  </td>
-                  <td>{book.discount}</td>
-                  <td>
-                    <Button
-                      variant="outline-primary"
-                      size="sm"
-                      className="me-2"
-                      onClick={() => handleEditClick(book)}
-                    >
-                      <FaEdit />
-                    </Button>
-                    <Button
-                      variant="outline-danger"
-                      size="sm"
-                      onClick={() => handleDelete(book.id)}
-                    >
-                      <FaTrash />
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-          {totalPages > 1 && (
-            <div className="d-flex justify-content-end mt-3">
-              <Pagination>{paginationItems}</Pagination>
+          {isLoading && (
+            <div className="text-center py-5">
+              <Spinner animation="border" />
             </div>
+          )}
+
+          {error && <Alert variant="danger">{error}</Alert>}
+
+          {!isLoading && !error && (
+            <>
+              <Table responsive bordered striped hover>
+                <thead>
+                  <tr>
+                    <th className="sortable" onClick={() => handleSort("id")}>
+                      ID {getSortIcon("id")}
+                    </th>
+                    <th
+                      className="sortable"
+                      onClick={() => handleSort("userName")}
+                    >
+                      Khách hàng {getSortIcon("userName")}
+                    </th>
+                    <th
+                      className="sortable"
+                      onClick={() => handleSort("status")}
+                    >
+                      Trạng thái {getSortIcon("status")}
+                    </th>
+                    <th
+                      className="sortable"
+                      onClick={() => handleSort("totalAmount")}
+                    >
+                      Tổng tiền {getSortIcon("totalAmount")}
+                    </th>
+                    <th>Thanh toán</th>
+                    <th>Địa chỉ</th>
+                    <th style={{ width: 120 }}>Hành động</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentOrders.map((o) => (
+                    <tr key={o.id}>
+                      <td>{o.id}</td>
+                      <td>{o.userName}</td>
+                      <td>{o.status}</td>
+                      <td>{o.totalAmount.toLocaleString()}₫</td>
+                      <td>{o.payment}</td>
+                      <td className="text-truncate" style={{ maxWidth: 180 }}>
+                        {o.address}
+                      </td>
+                      <td>
+                        <Button
+                          variant="outline-primary"
+                          size="sm"
+                          className="me-2"
+                          onClick={() => {
+                            setEditingOrder(o);
+                            setShowEdit(true);
+                          }}
+                        >
+                          <FaEdit />
+                        </Button>
+                        <Button
+                          variant="outline-danger"
+                          size="sm"
+                          onClick={() => handleDelete(o.id)}
+                        >
+                          <FaTrash />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+              {totalPages > 1 && (
+                <div className="d-flex justify-content-end mt-3">
+                  <Pagination>{paginationItems}</Pagination>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
-      {/* Add Modal */}
+
+      {/* Add Order Modal */}
       <Modal show={showAdd} onHide={() => setShowAdd(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Thêm đơn hàng mới</Modal.Title>
         </Modal.Header>
         <Form onSubmit={handleAddSubmit}>
           <Modal.Body>
-            <Row className="mb-3">
-              <Form.Group as={Col} controlId="name">
-                <Form.Label>Mã đơn hàng</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="name"
-                  placeholder="Nhập mã đơn hàng"
-                  required
-                />
-              </Form.Group>
-              <Form.Group as={Col} controlId="author">
-                <Form.Label>Tên khách hàng</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="author"
-                  placeholder="Nhập tên khách hàng"
-                  required
-                />
-              </Form.Group>
-            </Row>
-            <Form.Group controlId="category" className="mb-3">
-              <Form.Label>Trạng thái</Form.Label>
-              <Form.Control as="select" name="category" required>
-                <option value="">Chọn trạng thái</option>
-                <option value="pending">Chờ xử lý</option>
-                <option value="confirmed">Đã xác nhận</option>
-                <option value="shipping">Đang giao hàng</option>
-                <option value="delivered">Đã giao hàng</option>
-                <option value="cancelled">Đã hủy</option>
-              </Form.Control>
+            <Form.Group className="mb-3">
+              <Form.Label>Tên khách hàng</Form.Label>
+              <Form.Control name="userName" required />
             </Form.Group>
-            <Row className="mb-3">
-              <Form.Group as={Col} controlId="quantity">
-                <Form.Label>Tổng tiền</Form.Label>
-                <Form.Control
-                  type="number"
-                  name="quantity"
-                  placeholder="Nhập tổng tiền"
-                  min={0}
-                  required
-                />
-              </Form.Group>
-              <Form.Group as={Col} controlId="discount">
-                <Form.Label>Phương thức thanh toán</Form.Label>
-                <Form.Control as="select" name="discount" required>
-                  <option value="">Chọn phương thức</option>
-                  <option value="cod">Thanh toán khi nhận hàng</option>
-                  <option value="bank">Chuyển khoản ngân hàng</option>
-                  <option value="card">Thẻ tín dụng</option>
-                </Form.Control>
-              </Form.Group>
-            </Row>
-            <Form.Group controlId="description" className="mb-3">
+            <Form.Group className="mb-3">
+              <Form.Label>Trạng thái</Form.Label>
+              <Form.Select name="status" defaultValue="PENDING">
+                <option value="PENDING">Chờ xử lý</option>
+                <option value="CONFIRMED">Đã xác nhận</option>
+                <option value="SHIPPING">Đang giao hàng</option>
+                <option value="DELIVERED">Đã giao</option>
+                <option value="CANCELLED">Đã hủy</option>
+              </Form.Select>
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Tổng tiền</Form.Label>
+              <Form.Control type="number" name="totalAmount" required min={0} />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Phương thức thanh toán</Form.Label>
+              <Form.Select name="payment">
+                <option value="COD">Thanh toán khi nhận</option>
+                <option value="BANK">Chuyển khoản</option>
+                <option value="CARD">Thẻ tín dụng</option>
+              </Form.Select>
+            </Form.Group>
+            <Form.Group className="mb-3">
               <Form.Label>Địa chỉ giao hàng</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                name="description"
-                placeholder="Nhập địa chỉ giao hàng"
-              />
+              <Form.Control name="address" />
             </Form.Group>
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={() => setShowAdd(false)}>
-              Hủy
+              Huỷ
             </Button>
             <Button type="submit" variant="primary">
-              Thêm đơn hàng
+              Thêm
             </Button>
           </Modal.Footer>
         </Form>
       </Modal>
-      {/* Edit Modal */}
+
+      {/* Edit Order Modal */}
       <Modal show={showEdit} onHide={() => setShowEdit(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Chỉnh sửa đơn hàng</Modal.Title>
         </Modal.Header>
-        {editingBook && (
+        {editingOrder && (
           <Form onSubmit={handleEditSubmit}>
             <Modal.Body>
-              <Row className="mb-3">
-                <Form.Group as={Col} controlId="image">
-                  <Form.Label>Image URL</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="image"
-                    defaultValue={editingBook.image}
-                    required
-                  />
-                </Form.Group>
-              </Row>
-              <Row className="mb-3">
-                <Form.Group as={Col} controlId="name">
-                  <Form.Label>Name</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="name"
-                    defaultValue={editingBook.name}
-                    required
-                  />
-                </Form.Group>
-                <Form.Group as={Col} controlId="author">
-                  <Form.Label>Author</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="author"
-                    defaultValue={editingBook.author}
-                    required
-                  />
-                </Form.Group>
-              </Row>
-              <Form.Group controlId="category" className="mb-3">
-                <Form.Label>Category</Form.Label>
+              <Form.Group className="mb-3">
+                <Form.Label>Tên khách hàng</Form.Label>
                 <Form.Control
-                  type="text"
-                  name="category"
-                  defaultValue={editingBook.category}
+                  name="userName"
+                  defaultValue={editingOrder.userName}
                   required
                 />
               </Form.Group>
-              <Row className="mb-3">
-                <Form.Group as={Col} controlId="quantity">
-                  <Form.Label>Quantity</Form.Label>
-                  <Form.Control
-                    type="number"
-                    name="quantity"
-                    defaultValue={editingBook.quantity}
-                    required
-                  />
-                </Form.Group>
-                <Form.Group as={Col} controlId="discount">
-                  <Form.Label>Discount (%)</Form.Label>
-                  <Form.Control
-                    type="number"
-                    name="discount"
-                    defaultValue={editingBook.discount}
-                    required
-                  />
-                </Form.Group>
-              </Row>
-              <Form.Group controlId="description" className="mb-3">
-                <Form.Label>Description</Form.Label>
+              <Form.Group className="mb-3">
+                <Form.Label>Trạng thái</Form.Label>
+                <Form.Select name="status" defaultValue={editingOrder.status}>
+                  <option value="PENDING">Chờ xử lý</option>
+                  <option value="CONFIRMED">Đã xác nhận</option>
+                  <option value="SHIPPING">Đang giao hàng</option>
+                  <option value="DELIVERED">Đã giao</option>
+                  <option value="CANCELLED">Đã hủy</option>
+                </Form.Select>
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Tổng tiền</Form.Label>
                 <Form.Control
-                  as="textarea"
-                  rows={3}
-                  name="description"
-                  defaultValue={editingBook.description}
+                  type="number"
+                  name="totalAmount"
+                  defaultValue={editingOrder.totalAmount}
+                  required
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Phương thức thanh toán</Form.Label>
+                <Form.Select name="payment" defaultValue={editingOrder.payment}>
+                  <option value="COD">Thanh toán khi nhận</option>
+                  <option value="BANK">Chuyển khoản</option>
+                  <option value="CARD">Thẻ tín dụng</option>
+                </Form.Select>
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Địa chỉ giao hàng</Form.Label>
+                <Form.Control
+                  name="address"
+                  defaultValue={editingOrder.address}
                 />
               </Form.Group>
             </Modal.Body>
             <Modal.Footer>
-              {" "}
               <Button variant="secondary" onClick={() => setShowEdit(false)}>
-                Hủy
+                Huỷ
               </Button>
               <Button type="submit" variant="primary">
-                Lưu thay đổi
+                Lưu
               </Button>
             </Modal.Footer>
           </Form>
