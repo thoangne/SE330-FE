@@ -43,6 +43,8 @@ function Header() {
         <Navbar.Brand href="/" className="logo-hover">
           <img
             src="/logo.svg"
+            width="120"
+            height="40"
             alt="Fahasa Clone"
             className="d-inline-block align-top"
           />
