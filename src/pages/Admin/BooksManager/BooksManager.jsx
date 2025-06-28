@@ -1,4 +1,4 @@
-import React, { useState, useMemo, use, useEffect } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Container,
   Table,
@@ -24,8 +24,7 @@ import {
 import useBookStore from "../../../stores/useBookStore";
 
 const BooksManager = () => {
-  const { books, isLoading, addBook, updateBook, deleteBook, fetchBooks } =
-    useBookStore();
+  const { books, isLoading, addBook, deleteBook, fetchBooks } = useBookStore();
 
   useEffect(() => {
     fetchBooks();
