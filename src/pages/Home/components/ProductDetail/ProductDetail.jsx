@@ -11,7 +11,9 @@ import {
 } from "react-icons/fa";
 import { userProductService } from "../../../../services/userProductService";
 import { userReviewService } from "../../../../services/userReviewService";
+import { userCartService } from "../../../../services/userServices";
 import { useCartStore } from "../../../../stores/useCartStore";
+import { useAuthStore } from "../../../../stores/useAuthStore";
 import useProfileStore from "../../../../stores/useProfileStore";
 import "./ProductDetail.css";
 
@@ -29,8 +31,13 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [wishlistMessage, setWishlistMessage] = useState("");
+
   // Add useCartStore hook
   const addToCart = useCartStore((state) => state.addToCart);
+
+  // Add auth store to get user info
+  const { user, isAuthenticated } = useAuthStore();
+
   // Add wishlist hooks
   const { wishlist, addToWishlist, removeFromWishlist, fetchWishlist } =
     useProfileStore();
@@ -84,9 +91,15 @@ const ProductDetail = () => {
     const newQuantity = Math.max(1, Math.min(value, product?.stock || 1));
     setQuantity(newQuantity);
   };
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (product) {
-      addToCart(product, quantity);
+      if (isAuthenticated && user?.id) {
+        // For authenticated users, use API-aware addToCart
+        await addToCart(product, quantity, userCartService, user.id);
+      } else {
+        // For guest users, use local storage only
+        await addToCart(product, quantity);
+      }
     }
   };
   const handleWishlistToggle = () => {

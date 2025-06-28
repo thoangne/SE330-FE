@@ -27,7 +27,7 @@ function DetailSearch() {
   });
 
   // Get initial search query from URL
-  const searchQuery = searchParams.get("q") || "";
+  const searchQuery = searchParams.get("name") || "";
 
   // Initial data fetch
   useEffect(() => {
