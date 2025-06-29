@@ -102,58 +102,12 @@ function Profile() {
               });
 
               // Load promotion info using fresh user data
-              try {
-                console.log(
-                  "🏆 Profile: Loading promotion info for fresh user:",
-                  freshUser.id,
-                  "points:",
-                  freshUser.point || freshUser.points
-                );
-                const userPoints =
-                  freshUser.point ||
-                  freshUser.points ||
-                  freshUser.totalPoints ||
-                  0;
-                const promotionResponse =
-                  await userPromotionService.getUserRankInfo(userPoints);
-                console.log(
-                  "🏆 Profile: Promotion info loaded:",
-                  promotionResponse
-                );
-                setPromotionInfo(promotionResponse.data || promotionResponse);
-              } catch (error) {
-                console.error(
-                  "🏆 Profile: Error loading promotion info:",
-                  error
-                );
-                // Don't show error toast for promotion info as it's optional
-              }
+              await loadPromotionInfo(freshUser);
             }
           } catch (error) {
             console.error("🔍 Profile: Error fetching fresh user data:", error);
             // Continue with auth store data on API error
-
-            // Try to load promotion info with auth store user as fallback
-            try {
-              console.log(
-                "🏆 Profile: Loading promotion info for auth store user:",
-                user.id,
-                "points:",
-                user.point || user.points
-              );
-              const userPoints =
-                user.point || user.points || user.totalPoints || 0;
-              const promotionResponse =
-                await userPromotionService.getUserRankInfo(userPoints);
-              console.log(
-                "🏆 Profile: Promotion info loaded:",
-                promotionResponse
-              );
-              setPromotionInfo(promotionResponse.data || promotionResponse);
-            } catch (error) {
-              console.error("🏆 Profile: Error loading promotion info:", error);
-              // Don't show error toast for promotion info as it's optional
-            }
+            await loadPromotionInfo(user);
           }
         } else {
           console.warn("🔍 Profile: No user found in auth store");
@@ -167,7 +121,29 @@ function Profile() {
     };
 
     loadUserProfile();
-  }, [user]);
+  }, [user]); // Re-run when user changes in auth store
+
+  // Separate function to load promotion info
+  const loadPromotionInfo = async (userToUse) => {
+    try {
+      console.log(
+        "🏆 Profile: Loading promotion info for user:",
+        userToUse.id,
+        "points:",
+        userToUse.point || userToUse.points
+      );
+      const userPoints =
+        userToUse.point || userToUse.points || userToUse.totalPoints || 0;
+      const promotionResponse = await userPromotionService.getUserRankInfo(
+        userPoints
+      );
+      console.log("🏆 Profile: Promotion info loaded:", promotionResponse);
+      setPromotionInfo(promotionResponse.data || promotionResponse);
+    } catch (error) {
+      console.error("🏆 Profile: Error loading promotion info:", error);
+      // Don't show error toast for promotion info as it's optional
+    }
+  };
 
   const loadUserOrders = async () => {
     if (!user?.id) return;
@@ -252,6 +228,28 @@ function Profile() {
         order.id === updatedOrder.id ? updatedOrder : order
       )
     );
+  };
+
+  // Function to refresh promotion info when points are updated
+  const refreshPromotionInfo = async () => {
+    try {
+      // Get fresh user data to get updated points
+      const userResult = await getUserById(user?.id);
+      if (userResult.success && userResult.data) {
+        const freshUser = userResult.data;
+        setUserProfile(freshUser);
+
+        // Update auth store with fresh user data
+        updateUser(freshUser);
+
+        // Reload promotion info with fresh points
+        await loadPromotionInfo(freshUser);
+
+        console.log("🔄 Profile: Refreshed user data and promotion info");
+      }
+    } catch (error) {
+      console.error("🔄 Profile: Error refreshing promotion info:", error);
+    }
   };
 
   const getOrderStatusVariant = (status) => {
@@ -471,43 +469,17 @@ function Profile() {
                           </Badge>
                         </div>
                         <div className="mb-2">
-                          <small className="text-muted d-block">
-                            Điểm tích lũy:{" "}
-                            {userProfile?.point || userProfile?.points || 0}{" "}
-                            điểm
-                          </small>
-                          <small className="text-muted d-block">
-                            Tổng chi tiêu:{" "}
-                            {promotionInfo.total_spent?.toLocaleString()} đ
-                          </small>
-                          {promotionInfo.tier_multiplier > 1 && (
-                            <small className="text-success">
-                              Ưu đãi: x{promotionInfo.tier_multiplier}
-                            </small>
-                          )}
+                          <strong>Điểm tích lũy:</strong>
+                          {userProfile?.point || userProfile?.points || 0} điểm
                         </div>
-                        {promotionInfo.next_tier_requirement && (
-                          <div>
-                            <small className="text-muted d-block mb-1">
-                              Để lên hạng tiếp theo
-                            </small>
-                            <ProgressBar
-                              now={
-                                (promotionInfo.total_spent /
-                                  promotionInfo.next_tier_requirement) *
-                                100
-                              }
-                              size="sm"
-                            />
-                            <small className="text-muted">
-                              Còn{" "}
-                              {(
-                                promotionInfo.next_tier_requirement -
-                                promotionInfo.total_spent
-                              ).toLocaleString()}{" "}
-                              đ
-                            </small>
-                          </div>
+                        <div className="mb-2">
+                          <strong>Tổng chi tiêu:</strong>
+                          {promotionInfo.total_spent?.toLocaleString()} đ
+                        </div>
+                        {promotionInfo.tierMultiplier > 1 && (
+                          <small className="text-success">
+                            Ưu đãi: x{promotionInfo.tierMultiplier}
+                          </small>
                         )}
                       </Card.Body>
                     </Card>
@@ -702,7 +674,7 @@ function Profile() {
                                                   `Sản phẩm #${item.productId}`}
                                               </span>
                                               <span className="text-muted">
-                                                x{item.quantity} ={" "}
+                                                x{item.quantity} =
                                                 {(
                                                   item.price * item.quantity
                                                 ).toLocaleString()}
@@ -733,7 +705,7 @@ function Profile() {
                                                   `Sản phẩm #${item.productId}`}
                                               </span>
                                               <span className="text-muted">
-                                                x{item.quantity} ={" "}
+                                                x{item.quantity} =
                                                 {(
                                                   item.price * item.quantity
                                                 ).toLocaleString()}
@@ -758,7 +730,7 @@ function Profile() {
                                     {(order.payment_method ||
                                       order.paymentMethod) && (
                                       <p className="mt-2">
-                                        <strong>Phương thức thanh toán:</strong>{" "}
+                                        <strong>Phương thức thanh toán:</strong>
                                         {order.payment_method ||
                                           order.paymentMethod}
                                       </p>
@@ -766,7 +738,7 @@ function Profile() {
 
                                     {(order.notes || order.note) && (
                                       <p className="mt-2">
-                                        <strong>Ghi chú:</strong>{" "}
+                                        <strong>Ghi chú:</strong>
                                         {order.notes || order.note}
                                       </p>
                                     )}
@@ -839,28 +811,36 @@ function Profile() {
                                   {voucher.description || "Voucher giảm giá"}
                                 </p>
                                 <div className="mb-2">
-                                  <strong>Giảm:</strong>{" "}
+                                  <strong>Giảm:</strong>
                                   {userVoucherService.formatVoucherDiscount(
                                     voucher
                                   )}
                                 </div>
                                 <div className="mb-2">
-                                  <strong>Áp dụng cho:</strong> đơn từ{" "}
+                                  <strong>Áp dụng cho:</strong> đơn từ
                                   {voucher.minPurchase?.toLocaleString()} đ
                                 </div>
                                 <div className="mb-2">
-                                  <strong>Hạn sử dụng:</strong>{" "}
+                                  <strong>Hạn sử dụng:</strong>
                                   {new Date(
                                     voucher.expiryDate || voucher.expiry_date
                                   ).toLocaleDateString("vi-VN")}
                                 </div>
                                 <div className="mb-2">
-                                  <strong>Điểm yêu cầu:</strong>{" "}
+                                  <strong>Điểm yêu cầu:</strong>
                                   {voucher.point || 0} điểm
                                 </div>
                                 <div>
-                                  <strong>Còn lại:</strong> {voucher.remaining}/
-                                  {voucher.maxUsage}
+                                  <strong>Còn lại:</strong> {voucher.remaining}
+                                  lượt sử dụng
+                                  {voucher.discountType === "percent" && (
+                                    <div className="mt-1">
+                                      <small className="text-muted">
+                                        (Giảm tối đa:
+                                        {voucher.maxUsage?.toLocaleString()} đ)
+                                      </small>
+                                    </div>
+                                  )}
                                 </div>
                               </Card.Body>
                             </Card>
@@ -882,6 +862,7 @@ function Profile() {
             onHide={handleCloseOrderDetail}
             order={selectedOrder}
             onOrderUpdate={handleOrderUpdate}
+            onPointsUpdate={refreshPromotionInfo}
           />
         )}
       </Tab.Container>

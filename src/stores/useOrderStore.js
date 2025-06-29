@@ -1,4 +1,3 @@
-import axiosInstance from "./../lib/axiosInstance";
 import httpClient from "../services/httpClient";
 import { create } from "zustand";
 
@@ -25,18 +24,22 @@ const useOrderStore = create((set, get) => ({
       set({ error: error.message, isLoading: false });
     }
   },
-  updateOrder: async (id, order) => {
+  updateOrderStatus: async (orderId, status) => {
     set({ isLoading: true });
     try {
-      const response = await httpClient.put(`/orders/${id}`, order);
+      const response = await httpClient.patch(
+        `/orders/${orderId}/status?status=${status}`
+      );
       set({
         orders: get().orders.map((o) =>
-          o.id === id ? { ...o, ...response.data } : o
+          o.id === orderId ? { ...o, status: status } : o
         ),
         isLoading: false,
       });
+      return { success: true, data: response.data };
     } catch (error) {
       set({ error: error.message, isLoading: false });
+      return { success: false, error: error.message };
     }
   },
   deleteOrder: async (id) => {

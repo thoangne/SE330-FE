@@ -11,12 +11,13 @@ import {
   userProductService,
 } from "../../../../services/userServices";
 import { orderProcessingService } from "../../../../services/orderProcessingService";
+import { getUserById } from "../../../../services/authService";
 import "./CheckoutPage.css";
 
 function CheckoutPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, updateUser } = useAuthStore();
   const { clearCart, cartItems, initializeCart } = useCartStore();
 
   const [loading, setLoading] = useState(false);
@@ -328,6 +329,21 @@ function CheckoutPage() {
 
       console.log("🛒 CheckoutPage: Order processed successfully:", result);
 
+      // Refresh user data to get updated points (for non-COD payments)
+      if (formData.payment !== "COD") {
+        try {
+          const freshUserResult = await getUserById(user.id);
+          if (freshUserResult.success && freshUserResult.data) {
+            updateUser(freshUserResult.data);
+            console.log(
+              "🔄 CheckoutPage: User data refreshed with updated points"
+            );
+          }
+        } catch (error) {
+          console.warn("🔄 CheckoutPage: Failed to refresh user data:", error);
+        }
+      }
+
       if (formData.payment === "COD") {
         // COD payment - order created with PENDING payment
         toast.success(
@@ -418,15 +434,13 @@ function CheckoutPage() {
     const subtotal = calculateSubtotal();
 
     // Handle percentage discount type
-    if (selectedVoucher.discountType === "percentage") {
+    if (
+      selectedVoucher.discountType === "percent" ||
+      selectedVoucher.discountType === "percentage"
+    ) {
       const percentageDiscount = (subtotal * selectedVoucher.value) / 100;
-      // Apply maxDiscount limit if exists (from API field names)
-      return Math.min(
-        percentageDiscount,
-        selectedVoucher.maxDiscount ||
-          selectedVoucher.max_discount_amount ||
-          Infinity
-      );
+      // For percentage vouchers, maxUsage is the maximum discount amount
+      return Math.min(percentageDiscount, selectedVoucher.maxUsage || Infinity);
     }
     // Handle fixed discount type (giảm thẳng số tiền)
     else if (selectedVoucher.discountType === "fixed") {
@@ -653,7 +667,7 @@ function CheckoutPage() {
                         <small>{selectedVoucher.description}</small>
                         <br />
                         <small>
-                          Giảm:{" "}
+                          Giảm:
                           {userVoucherService?.formatVoucherDiscount
                             ? userVoucherService.formatVoucherDiscount(
                                 selectedVoucher
@@ -699,7 +713,7 @@ function CheckoutPage() {
                       <option value="">Chọn voucher khuyến mãi</option>
                       {availableVouchers.map((voucher) => (
                         <option key={voucher.id} value={voucher.id}>
-                          {voucher.code} -{" "}
+                          {voucher.code} -
                           {userVoucherService?.formatVoucherDiscount
                             ? userVoucherService.formatVoucherDiscount(voucher)
                             : voucher.discountType === "percentage"
@@ -765,7 +779,7 @@ function CheckoutPage() {
                       {item.product?.title || "Sản phẩm"}
                     </div>
                     <div className="item-quantity">
-                      Số lượng: {item.quantity} ×{" "}
+                      Số lượng: {item.quantity} ×
                       {(
                         item.product?.discount_price ||
                         item.product?.price ||

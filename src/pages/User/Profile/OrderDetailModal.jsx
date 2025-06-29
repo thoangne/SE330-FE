@@ -20,7 +20,13 @@ import { formatDateTimeForAPI } from "../../../utils/dateUtils";
 import { BsGift, BsCreditCard, BsCheckCircle, BsXCircle } from "react-icons/bs";
 import { toast } from "react-hot-toast";
 
-function OrderDetailModal({ show, onHide, order, onOrderUpdate }) {
+function OrderDetailModal({
+  show,
+  onHide,
+  order,
+  onOrderUpdate,
+  onPointsUpdate,
+}) {
   const [paymentDetail, setPaymentDetail] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -92,6 +98,12 @@ function OrderDetailModal({ show, onHide, order, onOrderUpdate }) {
             // Update user in store with new points
             const updatedUser = { ...user, point: pointsResult.data.newTotal };
             updateUser(updatedUser);
+
+            // Trigger refresh of promotion info in parent Profile component
+            if (onPointsUpdate) {
+              onPointsUpdate();
+            }
+
             toast.success(
               `Đã cộng ${pointsResult.data.pointsAdded} điểm vào tài khoản!`
             );
@@ -232,7 +244,7 @@ function OrderDetailModal({ show, onHide, order, onOrderUpdate }) {
                     <strong>Mã đơn hàng:</strong> #{order?.id}
                   </p>
                   <p>
-                    <strong>Ngày đặt:</strong>{" "}
+                    <strong>Ngày đặt:</strong>
                     {new Date(
                       order?.created_at || order?.createdAt || order?.orderDate
                     ).toLocaleDateString("vi-VN")}
@@ -241,7 +253,7 @@ function OrderDetailModal({ show, onHide, order, onOrderUpdate }) {
                     <strong>Trạng thái:</strong> {getStatusBadge(order?.status)}
                   </p>
                   <p>
-                    <strong>Tổng tiền:</strong>{" "}
+                    <strong>Tổng tiền:</strong>
                     <span className="text-primary fw-bold">
                       {order?.totalAmount?.toLocaleString()} đ
                     </span>
@@ -272,7 +284,7 @@ function OrderDetailModal({ show, onHide, order, onOrderUpdate }) {
                                 <div className="text-primary">
                                   {(
                                     item.price * item.quantity
-                                  ).toLocaleString()}{" "}
+                                  ).toLocaleString()}
                                   đ
                                 </div>
                               </div>
@@ -299,16 +311,16 @@ function OrderDetailModal({ show, onHide, order, onOrderUpdate }) {
                         <strong>Mã thanh toán:</strong> #{paymentDetail.id}
                       </p>
                       <p>
-                        <strong>Phương thức:</strong>{" "}
+                        <strong>Phương thức:</strong>
                         <BsCreditCard className="me-1" />
                         {paymentDetail.method}
                       </p>
                       <p>
-                        <strong>Trạng thái:</strong>{" "}
+                        <strong>Trạng thái:</strong>
                         {getPaymentStatusBadge(paymentDetail.status)}
                       </p>
                       <p>
-                        <strong>Tổng tiền:</strong>{" "}
+                        <strong>Tổng tiền:</strong>
                         <span className="text-primary fw-bold">
                           {paymentDetail.totalamount?.toLocaleString()} đ
                         </span>
@@ -330,7 +342,7 @@ function OrderDetailModal({ show, onHide, order, onOrderUpdate }) {
                       </p>
                       {paymentDetail.paidAt && (
                         <p>
-                          <strong>Thời gian thanh toán:</strong>{" "}
+                          <strong>Thời gian thanh toán:</strong>
                           {new Date(paymentDetail.paidAt).toLocaleString(
                             "vi-VN"
                           )}

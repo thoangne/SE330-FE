@@ -109,9 +109,13 @@ export const userVoucherService = {
   calculateDiscount(voucher, totalAmount) {
     if (voucher.discountType === "fixed") {
       return voucher.value;
-    } else if (voucher.discountType === "percentage") {
+    } else if (
+      voucher.discountType === "percent" ||
+      voucher.discountType === "percentage"
+    ) {
       const discount = (totalAmount * voucher.value) / 100;
-      return Math.min(discount, voucher.maxDiscount || discount);
+      // For percentage vouchers, maxUsage is the maximum discount amount
+      return Math.min(discount, voucher.maxUsage || discount);
     }
     return 0;
   },
@@ -122,10 +126,14 @@ export const userVoucherService = {
 
     if (voucher.discountType === "fixed") {
       return `${voucher.value?.toLocaleString()} đ`;
-    } else if (voucher.discountType === "percentage") {
+    } else if (
+      voucher.discountType === "percent" ||
+      voucher.discountType === "percentage"
+    ) {
       let text = `${voucher.value}%`;
-      if (voucher.maxDiscount) {
-        text += ` (tối đa ${voucher.maxDiscount.toLocaleString()} đ)`;
+      // For percentage vouchers, maxUsage is the maximum discount amount
+      if (voucher.maxUsage && voucher.maxUsage > 0) {
+        text += ` (tối đa ${voucher.maxUsage.toLocaleString()} đ)`;
       }
       return text;
     }

@@ -1,5 +1,4 @@
 import httpClient, { ENDPOINTS } from "./httpClient";
-import axiosInstance from "../lib/axiosInstance";
 
 export const login = async (email, password) => {
   try {
@@ -289,7 +288,7 @@ export const updateUserPoints = async (userId, newPoints) => {
   try {
     console.log("🏆 AuthService: Updating user points:", { userId, newPoints });
 
-    const response = await axiosInstance.patch(`/users/${userId}`, {
+    const response = await httpClient.patch(`/users/${userId}`, {
       point: newPoints,
     });
 

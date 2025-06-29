@@ -1,8 +1,18 @@
 import React from "react";
 import { Nav } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuthStore } from "../stores/useAuthStore";
 
 const AdminSidebar = ({ isCollapsed }) => {
+  const navigate = useNavigate();
+  const { user, logout } = useAuthStore();
+
+  const handleLogout = () => {
+    logout();
+    // Navigate to home instead of login after logout
+    navigate("/");
+  };
+
   return (
     <div
       className="d-flex flex-column bg-light"
@@ -28,12 +38,17 @@ const AdminSidebar = ({ isCollapsed }) => {
       {/* Avatar + Name */}
       <div className="text-center mb-4">
         <img
-          src="https://static.vecteezy.com/system/resources/previews/009/292/244/non_2x/default-avatar-icon-of-social-media-user-vector.jpg"
+          src={user?.avatar || "https://static.vecteezy.com/system/resources/previews/009/292/244/non_2x/default-avatar-icon-of-social-media-user-vector.jpg"}
           alt="User Avatar"
           className="rounded-circle mb-2"
           style={{ width: isCollapsed ? "30px" : "25%" }}
         />
-        {!isCollapsed && <h6>Quản trị viên</h6>}
+        {!isCollapsed && (
+          <div>
+            <h6>{user?.name || "Quản trị viên"}</h6>
+            {user?.email && <small className="text-muted">{user.email}</small>}
+          </div>
+        )}
       </div>
 
       {/* Navigation */}
@@ -67,10 +82,10 @@ const AdminSidebar = ({ isCollapsed }) => {
         <div className="flex-grow-1"></div>
         {/* Logout */}
         <Nav.Link
-          as={Link}
-          to="/logout"
+          onClick={handleLogout}
           className="text-danger mt-auto border-top pt-3"
           title="Đăng xuất"
+          style={{ cursor: "pointer" }}
         >
           🚪 {isCollapsed ? "" : "Đăng xuất"}
         </Nav.Link>

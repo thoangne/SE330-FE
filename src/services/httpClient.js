@@ -22,7 +22,7 @@ export const ENDPOINTS = {
 
 const httpClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000, // Increase timeout for slower connections
+  timeout: 60000, // Increase timeout for slower connections
   withCredentials: true, // Important for cookies
   headers: {
     "Content-Type": "application/json",
