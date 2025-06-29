@@ -23,14 +23,7 @@ import {
   userVoucherService,
   userPromotionService,
 } from "../../../services/userServices";
-import {
-  BsPersonFill,
-  BsClockHistory,
-  BsBell,
-  BsHeart,
-  BsGift,
-  BsStar,
-} from "react-icons/bs";
+import { BsPersonFill, BsClockHistory, BsGift, BsStar } from "react-icons/bs";
 import { toast } from "react-hot-toast";
 import "./Profile.css";
 
@@ -50,8 +43,9 @@ function Profile() {
   );
 
   const [formData, setFormData] = useState({
-    fullName: "",
+    name: "",
     email: "",
+    password: "",
     phone: "",
     address: "",
   });
@@ -65,8 +59,9 @@ function Profile() {
           console.log("🔍 Profile: User from auth store:", user);
           setUserProfile(user);
           setFormData({
-            fullName: user.full_name || user.fullName || user.name || "",
+            name: user.full_name || user.fullName || user.name || "",
             email: user.email || "",
+            password: "", // Don't pre-fill password
             phone: user.phone || "",
             address: user.address || "",
           });
@@ -86,45 +81,70 @@ function Profile() {
               const freshUser = userResult.data;
               setUserProfile(freshUser);
               setFormData({
-                fullName:
+                name:
                   freshUser.name ||
                   freshUser.full_name ||
                   freshUser.fullName ||
                   "",
                 email: freshUser.email || "",
+                password: "", // Don't pre-fill password
                 phone: freshUser.phone || "",
                 address: freshUser.address || "",
               });
+
+              // Load promotion info using fresh user data
+              try {
+                console.log(
+                  "🏆 Profile: Loading promotion info for fresh user:",
+                  freshUser.id,
+                  "points:",
+                  freshUser.point || freshUser.points
+                );
+                const userPoints =
+                  freshUser.point ||
+                  freshUser.points ||
+                  freshUser.totalPoints ||
+                  0;
+                const promotionResponse =
+                  await userPromotionService.getUserRankInfo(userPoints);
+                console.log(
+                  "🏆 Profile: Promotion info loaded:",
+                  promotionResponse
+                );
+                setPromotionInfo(promotionResponse.data || promotionResponse);
+              } catch (error) {
+                console.error(
+                  "🏆 Profile: Error loading promotion info:",
+                  error
+                );
+                // Don't show error toast for promotion info as it's optional
+              }
             }
           } catch (error) {
             console.error("🔍 Profile: Error fetching fresh user data:", error);
             // Continue with auth store data on API error
-          }
 
-          // Load promotion info using fresh user data or fallback to auth store
-          try {
-            const currentUser = user; // Always use user from auth store
-            console.log(
-              "🏆 Profile: Loading promotion info for user:",
-              currentUser.id,
-              "points:",
-              currentUser.point || currentUser.points
-            );
-            const userPoints =
-              currentUser.point ||
-              currentUser.points ||
-              currentUser.totalPoints ||
-              0;
-            const promotionResponse =
-              await userPromotionService.getUserRankInfo(userPoints);
-            console.log(
-              "🏆 Profile: Promotion info loaded:",
-              promotionResponse
-            );
-            setPromotionInfo(promotionResponse.data || promotionResponse);
-          } catch (error) {
-            console.error("🏆 Profile: Error loading promotion info:", error);
-            // Don't show error toast for promotion info as it's optional
+            // Try to load promotion info with auth store user as fallback
+            try {
+              console.log(
+                "🏆 Profile: Loading promotion info for auth store user:",
+                user.id,
+                "points:",
+                user.point || user.points
+              );
+              const userPoints =
+                user.point || user.points || user.totalPoints || 0;
+              const promotionResponse =
+                await userPromotionService.getUserRankInfo(userPoints);
+              console.log(
+                "🏆 Profile: Promotion info loaded:",
+                promotionResponse
+              );
+              setPromotionInfo(promotionResponse.data || promotionResponse);
+            } catch (error) {
+              console.error("🏆 Profile: Error loading promotion info:", error);
+              // Don't show error toast for promotion info as it's optional
+            }
           }
         } else {
           console.warn("🔍 Profile: No user found in auth store");
@@ -258,6 +278,33 @@ function Profile() {
     return "Có thể sử dụng";
   };
 
+  // Helper function to get rank CSS class
+  const getRankClass = (rank) => {
+    if (!rank) return "rank-bronze";
+
+    const rankLower = rank.toLowerCase();
+
+    if (rankLower.includes("bronze") || rankLower.includes("đồng")) {
+      return "rank-bronze";
+    } else if (rankLower.includes("silver") || rankLower.includes("bạc")) {
+      return "rank-silver";
+    } else if (rankLower.includes("gold") || rankLower.includes("vàng")) {
+      return "rank-gold";
+    } else if (
+      rankLower.includes("platinum") ||
+      rankLower.includes("bạch kim")
+    ) {
+      return "rank-platinum";
+    } else if (
+      rankLower.includes("diamond") ||
+      rankLower.includes("kim cương")
+    ) {
+      return "rank-diamond";
+    } else {
+      return "rank-bronze"; // Default
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -275,14 +322,31 @@ function Profile() {
         user?.id
       );
 
-      const result = await updateUserInfo(formData, user?.id);
+      // Prepare the update payload according to API spec
+      const updatePayload = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+      };
+
+      // Only include password if user has entered a new one
+      if (formData.password && formData.password.trim()) {
+        updatePayload.password = formData.password;
+      }
+
+      const result = await updateUserInfo(updatePayload, user?.id);
       console.log("✏️ Profile: Update result:", result);
 
       if (result.success) {
         // Update both local state and auth store
-        const updatedUser = result.data || { ...user, ...formData };
+        const updatedUser = result.data || { ...user, ...updatePayload };
         setUserProfile(updatedUser);
         updateUser(updatedUser);
+
+        // Clear password field after successful update
+        setFormData((prev) => ({ ...prev, password: "" }));
+
         toast.success("Cập nhật thông tin thành công!");
       } else {
         console.error("✏️ Profile: Update failed:", result);
@@ -367,26 +431,25 @@ function Profile() {
 
                   {/* Promotion Info */}
                   {promotionInfo && (
-                    <Card className="mt-3">
+                    <Card
+                      className={`mt-3 ${getRankClass(promotionInfo.rank)}`}
+                    >
                       <Card.Body className="p-3">
                         <div className="d-flex align-items-center justify-content-between mb-2">
                           <small className="text-muted">Hạng thành viên</small>
-                          <Badge
-                            bg="warning"
-                            className="d-flex align-items-center"
-                          >
+                          <Badge className="rank-badge d-flex align-items-center">
                             <BsStar className="me-1" />
                             {promotionInfo.rank}
                           </Badge>
                         </div>
                         <div className="mb-2">
                           <small className="text-muted d-block">
-                            Điểm tích lũy:
-                            {userProfile?.point || userProfile?.points || 0}
+                            Điểm tích lũy:{" "}
+                            {userProfile?.point || userProfile?.points || 0}{" "}
                             điểm
                           </small>
                           <small className="text-muted d-block">
-                            Tổng chi tiêu:
+                            Tổng chi tiêu:{" "}
                             {promotionInfo.total_spent?.toLocaleString()} đ
                           </small>
                           {promotionInfo.tier_multiplier > 1 && (
@@ -406,15 +469,14 @@ function Profile() {
                                   promotionInfo.next_tier_requirement) *
                                 100
                               }
-                              variant="warning"
                               size="sm"
                             />
                             <small className="text-muted">
-                              Còn
+                              Còn{" "}
                               {(
                                 promotionInfo.next_tier_requirement -
                                 promotionInfo.total_spent
-                              ).toLocaleString()}
+                              ).toLocaleString()}{" "}
                               đ
                             </small>
                           </div>
@@ -440,16 +502,6 @@ function Profile() {
                       <BsGift /> Voucher của tôi
                     </Nav.Link>
                   </Nav.Item>
-                  <Nav.Item>
-                    <Nav.Link eventKey="notifications">
-                      <BsBell /> Thông báo
-                    </Nav.Link>
-                  </Nav.Item>
-                  <Nav.Item>
-                    <Nav.Link eventKey="wishlist">
-                      <BsHeart /> Sản phẩm yêu thích
-                    </Nav.Link>
-                  </Nav.Item>
                 </Nav>
               </Card.Body>
             </Card>
@@ -468,9 +520,10 @@ function Profile() {
                           <Form.Group className="mb-3">
                             <Form.Label>Họ tên</Form.Label>
                             <Form.Control
-                              name="fullName"
-                              value={formData.fullName}
+                              name="name"
+                              value={formData.name}
                               onChange={handleInputChange}
+                              placeholder="Nhập họ và tên"
                               required
                             />
                           </Form.Group>
@@ -483,9 +536,24 @@ function Profile() {
                               name="email"
                               value={formData.email}
                               onChange={handleInputChange}
+                              placeholder="Nhập email"
                               required
-                              disabled // Email thường không cho phép thay đổi
                             />
+                          </Form.Group>
+                        </Col>
+                        <Col md={6}>
+                          <Form.Group className="mb-3">
+                            <Form.Label>Mật khẩu mới</Form.Label>
+                            <Form.Control
+                              type="password"
+                              name="password"
+                              value={formData.password}
+                              onChange={handleInputChange}
+                              placeholder="Để trống nếu không đổi mật khẩu"
+                            />
+                            <Form.Text className="text-muted">
+                              Chỉ nhập nếu bạn muốn thay đổi mật khẩu
+                            </Form.Text>
                           </Form.Group>
                         </Col>
                         <Col md={6}>
@@ -500,7 +568,7 @@ function Profile() {
                             />
                           </Form.Group>
                         </Col>
-                        <Col md={6}>
+                        <Col md={12}>
                           <Form.Group className="mb-3">
                             <Form.Label>Vai trò</Form.Label>
                             <Form.Control
@@ -590,22 +658,87 @@ function Profile() {
                               <Card.Body>
                                 <Row>
                                   <Col md={8}>
-                                    <p>
-                                      <strong>Địa chỉ giao hàng:</strong>
-                                      {order.shipping_address ||
-                                        order.shippingAddress ||
-                                        "Chưa có"}
-                                    </p>
-                                    <p>
-                                      <strong>Số điện thoại:</strong>
-                                      {order.phone_number ||
-                                        order.phoneNumber ||
-                                        order.phone ||
-                                        "Chưa có"}
-                                    </p>
+                                    {/* Display order items/products */}
+                                    {order.items && order.items.length > 0 ? (
+                                      <div>
+                                        <strong>Sản phẩm đã đặt:</strong>
+                                        {order.items.map((item, index) => (
+                                          <div
+                                            key={index}
+                                            className="mb-2 p-2 border-start border-3 border-primary"
+                                          >
+                                            <div className="d-flex justify-content-between">
+                                              <span>
+                                                {item.product?.title ||
+                                                  item.productName ||
+                                                  `Sản phẩm #${item.productId}`}
+                                              </span>
+                                              <span className="text-muted">
+                                                x{item.quantity} ={" "}
+                                                {(
+                                                  item.price * item.quantity
+                                                ).toLocaleString()}
+                                                đ
+                                              </span>
+                                            </div>
+                                            {item.product?.author && (
+                                              <small className="text-muted">
+                                                Tác giả: {item.product.author}
+                                              </small>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : order.orderItems &&
+                                      order.orderItems.length > 0 ? (
+                                      <div>
+                                        <strong>Sản phẩm đã đặt:</strong>
+                                        {order.orderItems.map((item, index) => (
+                                          <div
+                                            key={index}
+                                            className="mb-2 p-2 border-start border-3 border-primary"
+                                          >
+                                            <div className="d-flex justify-content-between">
+                                              <span>
+                                                {item.product?.title ||
+                                                  item.productName ||
+                                                  `Sản phẩm #${item.productId}`}
+                                              </span>
+                                              <span className="text-muted">
+                                                x{item.quantity} ={" "}
+                                                {(
+                                                  item.price * item.quantity
+                                                ).toLocaleString()}
+                                                đ
+                                              </span>
+                                            </div>
+                                            {item.product?.author && (
+                                              <small className="text-muted">
+                                                Tác giả: {item.product.author}
+                                              </small>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <p className="text-muted">
+                                        Không có thông tin sản phẩm
+                                      </p>
+                                    )}
+
+                                    {/* Display payment method if available */}
+                                    {(order.payment_method ||
+                                      order.paymentMethod) && (
+                                      <p className="mt-2">
+                                        <strong>Phương thức thanh toán:</strong>{" "}
+                                        {order.payment_method ||
+                                          order.paymentMethod}
+                                      </p>
+                                    )}
+
                                     {(order.notes || order.note) && (
-                                      <p>
-                                        <strong>Ghi chú:</strong>
+                                      <p className="mt-2">
+                                        <strong>Ghi chú:</strong>{" "}
                                         {order.notes || order.note}
                                       </p>
                                     )}
@@ -695,20 +828,6 @@ function Profile() {
                         ))}
                       </Row>
                     )}
-                  </Tab.Pane>
-
-                  {/* Notifications Tab */}
-                  <Tab.Pane eventKey="notifications">
-                    <h4>Thông báo</h4>
-                    <Alert variant="info">Bạn chưa có thông báo nào.</Alert>
-                  </Tab.Pane>
-
-                  {/* Wishlist Tab */}
-                  <Tab.Pane eventKey="wishlist">
-                    <h4>Sản phẩm yêu thích</h4>
-                    <Alert variant="info">
-                      Bạn chưa có sản phẩm yêu thích nào.
-                    </Alert>
                   </Tab.Pane>
                 </Tab.Content>
               </Card.Body>

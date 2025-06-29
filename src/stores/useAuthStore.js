@@ -4,6 +4,7 @@ import { toast } from "react-hot-toast";
 import {
   login as loginAPI,
   logout as logoutAPI,
+  register as registerAPI,
   getCurrentUser,
   checkAuthStatus,
 } from "../services/authService";
@@ -47,6 +48,31 @@ export const useAuthStore = create(
           }
         } catch (error) {
           const errorMessage = error.message || "Đăng nhập thất bại";
+          set({ error: errorMessage });
+          toast.error(errorMessage);
+          return { success: false, message: errorMessage };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      register: async (email) => {
+        set({ isLoading: true, error: null });
+        try {
+          const result = await registerAPI(email);
+
+          if (result.success) {
+            // Don't automatically log in after registration
+            // Just show success message
+            toast.success(result.message);
+            return { success: true, message: result.message };
+          } else {
+            set({ error: result.message });
+            toast.error(result.message);
+            return { success: false, message: result.message };
+          }
+        } catch (error) {
+          const errorMessage = error.message || "Đăng ký thất bại";
           set({ error: errorMessage });
           toast.error(errorMessage);
           return { success: false, message: errorMessage };

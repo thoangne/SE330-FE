@@ -22,10 +22,8 @@ function LoginRegisterForm() {
   const [loginData, setLoginData] = useState({ email: "", password: "" });
   const [registerData, setRegisterData] = useState({
     email: "",
-    password: "",
-    confirmPassword: "",
   });
-  const { login, isLoading, error, clearError } = useAuthStore();
+  const { login, register, isLoading, error, clearError } = useAuthStore();
   const [formErrors, setFormErrors] = useState({});
   // Reset errors when switching tabs
   const handleTabSelect = (k) => {
@@ -93,16 +91,6 @@ function LoginRegisterForm() {
     } else if (!/\S+@\S+\.\S+/.test(registerData.email)) {
       errors.registerEmail = "Email không hợp lệ";
     }
-    if (!registerData.password) {
-      errors.registerPassword = "Vui lòng nhập mật khẩu";
-    } else if (registerData.password.length < 6) {
-      errors.registerPassword = "Mật khẩu phải có ít nhất 6 ký tự";
-    }
-    if (!registerData.confirmPassword) {
-      errors.confirmPassword = "Vui lòng xác nhận mật khẩu";
-    } else if (registerData.password !== registerData.confirmPassword) {
-      errors.confirmPassword = "Mật khẩu không khớp";
-    }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -137,11 +125,30 @@ function LoginRegisterForm() {
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     if (validateRegisterForm()) {
-      // TODO: Implement register API when available
-      setFormErrors({
-        registerGeneral:
-          "Chức năng đăng ký đang được phát triển. Vui lòng liên hệ admin để tạo tài khoản.",
-      });
+      try {
+        const result = await register(registerData.email);
+        if (result.success) {
+          // Show success message and switch to login tab
+          setFormErrors({
+            registerSuccess: result.message,
+          });
+          // Clear the form
+          setRegisterData({ email: "" });
+          // Switch to login tab after a short delay
+          setTimeout(() => {
+            setKey("login");
+            setFormErrors({});
+          }, 3000);
+        } else {
+          setFormErrors({
+            registerGeneral: result.message || "Đăng ký thất bại",
+          });
+        }
+      } catch {
+        setFormErrors({
+          registerGeneral: "Có lỗi xảy ra khi đăng ký",
+        });
+      }
     }
   };
 
@@ -265,17 +272,23 @@ function LoginRegisterForm() {
 
           <Tab eventKey="register" title="Đăng ký">
             <Form onSubmit={handleRegisterSubmit}>
+              {formErrors.registerSuccess && (
+                <Alert variant="success" className="mb-3">
+                  {formErrors.registerSuccess}
+                </Alert>
+              )}
+
               {formErrors.registerGeneral && (
                 <Alert variant="danger" className="mb-3">
                   {formErrors.registerGeneral}
                 </Alert>
               )}
 
-              <Form.Group className="mb-3" controlId="formPhoneOrEmail">
-                <Form.Label>Số điện thoại/Email</Form.Label>
+              <Form.Group className="mb-3" controlId="registerEmail">
+                <Form.Label>Email</Form.Label>
                 <Form.Control
-                  type="text"
-                  placeholder="Nhập..."
+                  type="email"
+                  placeholder="Nhập email để đăng ký tài khoản"
                   value={registerData.email}
                   onChange={(e) =>
                     handleInputChange("register", "email", e.target.value)
@@ -286,64 +299,10 @@ function LoginRegisterForm() {
                 <Form.Control.Feedback type="invalid">
                   {formErrors.registerEmail}
                 </Form.Control.Feedback>
-              </Form.Group>
-
-              <Form.Group className="mb-2" controlId="formPassword">
-                <Form.Label>Mật khẩu</Form.Label>
-                <InputGroup hasValidation>
-                  <FormControl
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Nhập mật khẩu"
-                    value={registerData.password}
-                    onChange={(e) =>
-                      handleInputChange("register", "password", e.target.value)
-                    }
-                    isInvalid={!!formErrors.registerPassword}
-                    disabled={isLoading}
-                  />
-                  <Button
-                    variant="outline-secondary"
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    size="sm"
-                    disabled={isLoading}
-                  >
-                    {showPassword ? "Ẩn" : "Hiện"}
-                  </Button>
-                  <Form.Control.Feedback type="invalid">
-                    {formErrors.registerPassword}
-                  </Form.Control.Feedback>
-                </InputGroup>
-              </Form.Group>
-
-              <Form.Group className="mb-3" controlId="formConfirmPassword">
-                <Form.Label>Xác nhận mật khẩu</Form.Label>
-                <InputGroup hasValidation>
-                  <FormControl
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Nhập lại mật khẩu"
-                    value={registerData.confirmPassword}
-                    onChange={(e) =>
-                      handleInputChange(
-                        "register",
-                        "confirmPassword",
-                        e.target.value
-                      )
-                    }
-                    isInvalid={!!formErrors.confirmPassword}
-                    disabled={isLoading}
-                  />
-                  <Button
-                    variant="outline-secondary"
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    size="sm"
-                    disabled={isLoading}
-                  >
-                    {showPassword ? "Ẩn" : "Hiện"}
-                  </Button>
-                  <Form.Control.Feedback type="invalid">
-                    {formErrors.confirmPassword}
-                  </Form.Control.Feedback>
-                </InputGroup>
+                <Form.Text className="text-muted">
+                  Hệ thống sẽ tự động tạo mật khẩu và gửi thông tin đăng nhập về
+                  email của bạn
+                </Form.Text>
               </Form.Group>
 
               <Button
@@ -352,7 +311,21 @@ function LoginRegisterForm() {
                 className="w-100 rounded-pill mb-3"
                 disabled={isLoading}
               >
-                Đăng ký
+                {isLoading ? (
+                  <>
+                    <Spinner
+                      as="span"
+                      animation="border"
+                      size="sm"
+                      role="status"
+                      aria-hidden="true"
+                      className="me-2"
+                    />
+                    Đang xử lý...
+                  </>
+                ) : (
+                  "Đăng ký"
+                )}
               </Button>
             </Form>
           </Tab>

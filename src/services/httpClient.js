@@ -13,10 +13,10 @@ export const API_BASE_URL =
 export const ENDPOINTS = {
   LOGIN: "/auth/login",
   LOGOUT: "/auth/logout",
+  REGISTER: "/users/register",
   REFRESH_TOKEN: "/auth/refresh-token",
   FORGOT_PASSWORD: "/auth/forgot-password",
   RESET_PASSWORD: "/auth/reset-password",
-  USER_INFO: "/users/me",
   USERS_UPDATE: "/users",
 };
 
@@ -44,6 +44,7 @@ httpClient.interceptors.request.use(
     // Don't add token to login/register/forgot-password endpoints
     const noAuthEndpoints = [
       ENDPOINTS.LOGIN,
+      ENDPOINTS.REGISTER,
       ENDPOINTS.FORGOT_PASSWORD,
       ENDPOINTS.RESET_PASSWORD,
     ];

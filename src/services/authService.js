@@ -47,6 +47,46 @@ export const login = async (email, password) => {
   }
 };
 
+export const register = async (email) => {
+  try {
+    const response = await httpClient.post(ENDPOINTS.REGISTER, {
+      email,
+    });
+
+    const { data } = response;
+
+    // Check for successful response (201 Created)
+    if (response.status === 201 || data.success) {
+      return {
+        success: true,
+        data: data,
+        message:
+          data.message ||
+          "Đăng ký thành công! Vui lòng kiểm tra email để nhận thông tin đăng nhập.",
+      };
+    }
+
+    return {
+      success: false,
+      data: null,
+      message: data.message || "Đăng ký thất bại",
+    };
+  } catch (error) {
+    console.error("Register error:", error);
+
+    const errorMessage =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      "Có lỗi xảy ra khi đăng ký";
+
+    return {
+      success: false,
+      data: null,
+      message: errorMessage,
+    };
+  }
+};
+
 export const logout = async () => {
   try {
     // Call logout endpoint to invalidate refresh token on server
@@ -171,34 +211,6 @@ export const resetPassword = async (token, newPassword, confirmPassword) => {
   }
 };
 
-export const getUserInfo = async () => {
-  try {
-    const response = await httpClient.get(ENDPOINTS.USER_INFO);
-
-    if (response.data && response.status === 200) {
-      return {
-        success: true,
-        data: response.data,
-        message: "Lấy thông tin user thành công",
-      };
-    }
-
-    return {
-      success: false,
-      data: null,
-      message: response.data?.message || "Lấy thông tin user thất bại",
-    };
-  } catch (error) {
-    console.error("Get user info error:", error);
-    return {
-      success: false,
-      data: null,
-      message:
-        error.response?.data?.message || "Có lỗi xảy ra khi lấy thông tin user",
-    };
-  }
-};
-
 export const updateUserInfo = async (userData, userId) => {
   try {
     // Use userId from parameter or get from stored user data
@@ -212,10 +224,11 @@ export const updateUserInfo = async (userData, userId) => {
       };
     }
 
-    const response = await httpClient.put(
-      `${ENDPOINTS.USERS_UPDATE}/${userIdToUse}`,
+    console.log(
+      "🔍 UpdateUserInfo: Calling PATCH /users/" + userIdToUse,
       userData
     );
+    const response = await httpClient.patch(`/users/${userIdToUse}`, userData);
 
     if (response.data && response.status === 200) {
       return {
@@ -275,9 +288,9 @@ const authService = {
   logout,
   forgotPassword,
   resetPassword,
-  getUserInfo,
   updateUserInfo,
   getUserById,
+  register,
 };
 
 export default authService;
