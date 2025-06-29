@@ -1,5 +1,6 @@
 import axiosInstance from "./../lib/axiosInstance";
 import { create } from "zustand";
+import httpClient from "../services/httpClient";
 
 const useAuthorStore = create((set, get) => ({
   authors: [],
@@ -18,7 +19,7 @@ const useAuthorStore = create((set, get) => ({
   addAuthor: async (author) => {
     set({ isLoading: true });
     try {
-      const response = await axiosInstance.post("/authors", author);
+      const response = await httpClient.post("/authors", author);
       set({ authors: [...get().authors, response.data], isLoading: false });
     } catch (error) {
       set({ error: error.message, isLoading: false });
@@ -27,7 +28,7 @@ const useAuthorStore = create((set, get) => ({
   updateAuthor: async (id, author) => {
     set({ isLoading: true });
     try {
-      const response = await axiosInstance.put(`/authors/${id}`, author);
+      const response = await httpClient.patch(`/authors/${id}`, author);
       set({
         authors: get().authors.map((a) =>
           a.id === id ? { ...a, ...response.data } : a
@@ -41,7 +42,7 @@ const useAuthorStore = create((set, get) => ({
   deleteAuthor: async (id) => {
     set({ isLoading: true });
     try {
-      await axiosInstance.delete(`/authors/${id}`);
+      await httpClient.delete(`/authors/${id}`);
       set({
         authors: get().authors.filter((a) => a.id !== id),
         isLoading: false,

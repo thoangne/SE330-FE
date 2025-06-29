@@ -289,6 +289,7 @@ const UsersManager = () => {
               <Form.Label>Vai trò</Form.Label>
               <Form.Select name="role" defaultValue="USER" required>
                 <option value="USER">USER</option>
+                <option value="EMPLOYEE">EMPLOYEE</option>
                 <option value="ADMIN">ADMIN</option>
               </Form.Select>
             </Form.Group>
@@ -360,6 +361,7 @@ const UsersManager = () => {
                   required
                 >
                   <option value="USER">USER</option>
+                  <option value="EMPLOYEE">EMPLOYEE</option>
                   <option value="ADMIN">ADMIN</option>
                 </Form.Select>
               </Form.Group>
