@@ -48,8 +48,8 @@ const OrdersManager = () => {
   const [editingOrder, setEditingOrder] = useState(null);
 
   const handleSearch = (e) => {
-    setSearchTerm(e.target.value);
-    setCurrentPage(1);
+    // setSearchTerm(e.target.value);
+    // setCurrentPage(1);
   };
 
   const handleSort = (key) => {
@@ -108,8 +108,8 @@ const OrdersManager = () => {
     () =>
       orders.filter(
         (o) =>
-          o.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          o.status.toLowerCase().includes(searchTerm.toLowerCase())
+          // o.userId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          o?.status.toLowerCase().includes(searchTerm.toLowerCase())
       ),
     [orders, searchTerm]
   );

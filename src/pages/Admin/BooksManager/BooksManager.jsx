@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import Select from "react-select";
 import {
   Container,
   Table,
@@ -22,9 +23,55 @@ import {
   FaPlus,
 } from "react-icons/fa";
 import useBookStore from "../../../stores/useBookStore";
+import { userCategoryService } from "../../../services/userCategoryService";
+import { userAuthorService } from "../../../services/userAuthorService";
+import { userPublisherService } from "../../../services/userPublisherService";
+
 
 const BooksManager = () => {
-  const { books, isLoading, addBook, deleteBook, fetchBooks } = useBookStore();
+  const { books, isLoading, addBook, updateBook, deleteBook, fetchBooks } = useBookStore();
+  const [categories, setCategories] = useState([]);
+  const [authors, setAuthors] = useState([]);
+  const [selectedAuthors, setSelectedAuthors] = useState([]);
+  const [publishers, setPublishers] = useState([]);
+
+  useEffect(() => {
+    const fetchPublishers = async () => {
+      try {
+        const data = await userPublisherService.getAllPublishers();
+        setPublishers(data);
+      } catch (err) {
+        console.error("Lỗi tải NXB:", err);
+      }
+    };
+    fetchPublishers();
+  }, []);
+
+  useEffect(() => {
+    const loadAuthors = async () => {
+      try {
+        const data = await userAuthorService.getAllAuthors();
+        setAuthors(data);
+      } catch (error) {
+        console.error("Lỗi khi tải tác giả:", error);
+      }
+    };
+
+    loadAuthors();
+  }, []);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const data = await userCategoryService.getAllCategories();
+        setCategories(data);
+      } catch (error) {
+        console.error("Lỗi khi tải thể loại:", error);
+      }
+    };
+
+    loadCategories();
+  }, []);
 
   useEffect(() => {
     fetchBooks();
@@ -64,15 +111,15 @@ const BooksManager = () => {
     const form = e.target;
     const newBook = {
       coverImage: form.image.value,
-      description: form.name.value,
-      discount: form.author.value,
-      price: form.category.value,
-      slug: parseInt(form.quantity.value, 10),
-      stock: form.description.value,
-      title: parseInt(form.discount.value, 10),
-      publisherId: parseInt(form.discount.value, 10),
-      categoryId: parseInt(form.discount.value, 10),
-      authorIds: parseInt(form.discount.value, 10),
+      description: form.description.value,
+      discount: form.discount.value,
+      price: form.price.value,
+      slug: form.name.value,
+      stock: parseInt(form.quantity.value, 10),
+      title: form.name.value,
+      publisherId: parseInt(form.publisher.value, 10),
+      categoryId: parseInt(form.category.value, 10),
+      authorIds: selectedAuthors.map((a) => a.value)
     };
     addBook(newBook);
     setShowAdd(false);
@@ -85,14 +132,12 @@ const BooksManager = () => {
       ...editingBook,
       coverImage: form.image.value,
       title: form.name.value,
-      authors: form.author.value,
-      category: form.category.value,
-      quantity: parseInt(form.quantity.value, 10),
+      stock: parseInt(form.quantity.value, 10),
       description: form.description.value,
       discount: parseInt(form.discount.value, 10),
     };
     console.log(updated);
-    // updateBook(id,updated);
+    updateBook(editingBook.id, updated);
     setShowEdit(false);
   };
   const handleDelete = (id) => {
@@ -106,14 +151,14 @@ const BooksManager = () => {
     () =>
       books
         ? books.filter(
-            (book) =>
-              (book.name || "")
-                .toLowerCase()
-                .includes((searchTerm || "").toLowerCase()) ||
-              (book.author || "")
-                .toLowerCase()
-                .includes((searchTerm || "").toLowerCase())
-          )
+          (book) =>
+            (book.name || "")
+              .toLowerCase()
+              .includes((searchTerm || "").toLowerCase()) ||
+            (book.author || "")
+              .toLowerCase()
+              .includes((searchTerm || "").toLowerCase())
+        )
         : [],
     [books, searchTerm]
   );
@@ -199,10 +244,12 @@ const BooksManager = () => {
                 </th>
                 <th>Tác giả</th>
                 <th>Thể loại</th>
+                <th>NXB</th>
                 <th className="sortable" onClick={() => handleSort("quantity")}>
                   Số lượng {getSortIcon("quantity")}
                 </th>
                 <th>Mô tả</th>
+                <th>Giá gốc</th>
                 <th className="sortable" onClick={() => handleSort("discount")}>
                   Giảm giá (%) {getSortIcon("discount")}
                 </th>
@@ -222,12 +269,18 @@ const BooksManager = () => {
                     />
                   </td>
                   <td>{book.title}</td>
-                  <td>{book.authors?.name || "Unknown"}</td>
+                  <td>
+                    {book.authors && book.authors.length > 0
+                      ? book.authors.map(a => a.name).join(", ")
+                      : "Unknown"}
+                  </td>
                   <td>{book.category?.name || "Unknown"}</td>
+                  <td>{book.publisher?.name || "Unknown"}</td>
                   <td>{book.stock}</td>
                   <td className="text-truncate" style={{ maxWidth: "150px" }}>
                     {book.description}
                   </td>
+                  <td>{book.price}</td>
                   <td>{book.discount}</td>
                   <td>
                     <Button
@@ -257,6 +310,7 @@ const BooksManager = () => {
           )}
         </div>
       </div>
+
       {/* Add Modal */}
       <Modal show={showAdd} onHide={() => setShowAdd(false)}>
         <Modal.Header closeButton>
@@ -264,6 +318,7 @@ const BooksManager = () => {
         </Modal.Header>
         <Form onSubmit={handleAddSubmit}>
           <Modal.Body>
+            {/* Ảnh */}
             <Row className="mb-3">
               <Form.Group as={Col} controlId="image">
                 <Form.Label>URL hình ảnh</Form.Label>
@@ -275,6 +330,8 @@ const BooksManager = () => {
                 />
               </Form.Group>
             </Row>
+
+            {/* Tên sách */}
             <Row className="mb-3">
               <Form.Group as={Col} controlId="name">
                 <Form.Label>Tên sách</Form.Label>
@@ -285,26 +342,65 @@ const BooksManager = () => {
                   required
                 />
               </Form.Group>
-              <Form.Group as={Col} controlId="author">
+            </Row>
+
+            {/* Tác giả */}
+            <Row className="mb-3">
+              <Form.Group as={Col} controlId="authors">
                 <Form.Label>Tác giả</Form.Label>
+                <Select
+                  isMulti
+                  options={authors.map((a) => ({ label: a.name, value: a.id }))}
+                  value={selectedAuthors}
+                  onChange={setSelectedAuthors}
+                  placeholder="Chọn tác giả..."
+                  isClearable
+                />
+              </Form.Group>
+            </Row>
+
+            {/* Thể loại */}
+            <Row className="mb-3">
+              <Form.Group as={Col} controlId="category">
+                <Form.Label>Thể loại</Form.Label>
+                <Form.Select name="category" required>
+                  <option value="">-- Chọn thể loại --</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+            </Row>
+
+            <Row className="mb-3">
+              <Form.Group as={Col} controlId="publisher">
+                <Form.Label>Nhà xuất bản</Form.Label>
+                <Form.Select name="publisher" required>
+                  <option value="">-- Chọn NXB --</option>
+                  {publishers.map((pub) => (
+                    <option key={pub.id} value={pub.id}>
+                      {pub.name}
+                    </option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+            </Row>
+
+            {/* Giá + Số lượng + Giảm giá */}
+            <Row className="mb-3">
+              <Form.Group as={Col} controlId="price">
+                <Form.Label>Giá gốc</Form.Label>
                 <Form.Control
-                  type="text"
-                  name="author"
-                  placeholder="Nhập tên tác giả"
+                  type="number"
+                  name="price"
+                  defaultValue={0}
+                  min={0}
                   required
                 />
-              </Form.Group>{" "}
-            </Row>
-            <Form.Group controlId="category" className="mb-3">
-              <Form.Label>Thể loại</Form.Label>
-              <Form.Control
-                type="text"
-                name="category"
-                placeholder="Nhập thể loại"
-                required
-              />
-            </Form.Group>
-            <Row className="mb-3">
+              </Form.Group>
+
               <Form.Group as={Col} controlId="quantity">
                 <Form.Label>Số lượng</Form.Label>
                 <Form.Control
@@ -315,6 +411,7 @@ const BooksManager = () => {
                   required
                 />
               </Form.Group>
+
               <Form.Group as={Col} controlId="discount">
                 <Form.Label>Giảm giá (%)</Form.Label>
                 <Form.Control
@@ -327,15 +424,19 @@ const BooksManager = () => {
                 />
               </Form.Group>
             </Row>
-            <Form.Group controlId="description" className="mb-3">
-              <Form.Label>Mô tả</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                name="description"
-                placeholder="Nhập mô tả"
-              />
-            </Form.Group>
+
+            {/* Mô tả */}
+            <Row className="mb-3">
+              <Form.Group as={Col} controlId="description">
+                <Form.Label>Mô tả</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={3}
+                  name="description"
+                  placeholder="Nhập mô tả"
+                />
+              </Form.Group>
+            </Row>
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={() => setShowAdd(false)}>
@@ -347,6 +448,7 @@ const BooksManager = () => {
           </Modal.Footer>
         </Form>
       </Modal>
+
       {/* Edit Modal */}
       <Modal show={showEdit} onHide={() => setShowEdit(false)}>
         <Modal.Header closeButton>
@@ -355,53 +457,104 @@ const BooksManager = () => {
         {editingBook && (
           <Form onSubmit={handleEditSubmit}>
             <Modal.Body>
+              {/* Ảnh */}
               <Row className="mb-3">
                 <Form.Group as={Col} controlId="image">
                   <Form.Label>URL hình ảnh</Form.Label>
                   <Form.Control
                     type="text"
                     name="image"
-                    defaultValue={editingBook.image}
+                    defaultValue={editingBook.coverImage}
                     required
                   />
                 </Form.Group>
               </Row>
+
+              {/* Tên sách */}
               <Row className="mb-3">
                 <Form.Group as={Col} controlId="name">
                   <Form.Label>Tên sách</Form.Label>
                   <Form.Control
                     type="text"
                     name="name"
-                    defaultValue={editingBook.name}
-                    required
-                  />
-                </Form.Group>
-                <Form.Group as={Col} controlId="author">
-                  <Form.Label>Tác giả</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="author"
-                    defaultValue={editingBook.author}
+                    defaultValue={editingBook.title}
                     required
                   />
                 </Form.Group>
               </Row>
-              <Form.Group controlId="category" className="mb-3">
-                <Form.Label>Thể loại</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="category"
-                  defaultValue={editingBook.category}
-                  required
-                />
-              </Form.Group>
+
+              {/* Tác giả */}
               <Row className="mb-3">
+                <Form.Group as={Col} controlId="authors">
+                  <Form.Label>Tác giả</Form.Label>
+                  <Select
+                    isMulti
+                    options={authors.map((a) => ({ label: a.name, value: a.id }))}
+                    value={selectedAuthors}
+                    onChange={setSelectedAuthors}
+                    placeholder="Chọn tác giả..."
+                    isClearable
+                  />
+                </Form.Group>
+              </Row>
+
+              {/* Thể loại */}
+              <Row className="mb-3">
+                <Form.Group as={Col} controlId="category">
+                  <Form.Label>Thể loại</Form.Label>
+                  <Form.Select
+                    name="category"
+                    defaultValue={editingBook.category?.id || ""}
+                    required
+                  >
+                    <option value="">-- Chọn thể loại --</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Row>
+
+              {/* NXB */}
+              <Row className="mb-3">
+                <Form.Group as={Col} controlId="publisher">
+                  <Form.Label>Nhà xuất bản</Form.Label>
+                  <Form.Select
+                    name="publisher"
+                    defaultValue={editingBook.publisher?.id || ""}
+                    required
+                  >
+                    <option value="">-- Chọn NXB --</option>
+                    {publishers.map((pub) => (
+                      <option key={pub.id} value={pub.id}>
+                        {pub.name}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Row>
+
+              {/* Giá, Số lượng, Giảm giá */}
+              <Row className="mb-3">
+                <Form.Group as={Col} controlId="price">
+                  <Form.Label>Giá gốc</Form.Label>
+                  <Form.Control
+                    type="number"
+                    name="price"
+                    defaultValue={editingBook.price}
+                    min={0}
+                    required
+                  />
+                </Form.Group>
                 <Form.Group as={Col} controlId="quantity">
                   <Form.Label>Số lượng</Form.Label>
                   <Form.Control
                     type="number"
                     name="quantity"
-                    defaultValue={editingBook.quantity}
+                    defaultValue={editingBook.stock}
+                    min={1}
                     required
                   />
                 </Form.Group>
@@ -411,19 +564,25 @@ const BooksManager = () => {
                     type="number"
                     name="discount"
                     defaultValue={editingBook.discount}
+                    min={0}
+                    max={100}
                     required
                   />
                 </Form.Group>
               </Row>
-              <Form.Group controlId="description" className="mb-3">
-                <Form.Label>Mô tả</Form.Label>
-                <Form.Control
-                  as="textarea"
-                  rows={3}
-                  name="description"
-                  defaultValue={editingBook.description}
-                />
-              </Form.Group>
+
+              {/* Mô tả */}
+              <Row className="mb-3">
+                <Form.Group as={Col} controlId="description">
+                  <Form.Label>Mô tả</Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    rows={3}
+                    name="description"
+                    defaultValue={editingBook.description}
+                  />
+                </Form.Group>
+              </Row>
             </Modal.Body>
             <Modal.Footer>
               <Button variant="secondary" onClick={() => setShowEdit(false)}>
