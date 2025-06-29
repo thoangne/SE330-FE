@@ -1,4 +1,5 @@
 import axiosInstance from "./../lib/axiosInstance";
+import httpClient from "../services/httpClient";
 import { create } from "zustand";
 
 const useOrderStore = create((set, get) => ({
@@ -9,7 +10,7 @@ const useOrderStore = create((set, get) => ({
   fetchOrders: async () => {
     set({ isLoading: true });
     try {
-      const response = await axiosInstance.get("/orders");
+      const response = await httpClient.get("/orders");
       set({ orders: response.data, isLoading: false });
     } catch (error) {
       set({ error: error.message, isLoading: false });
@@ -18,7 +19,7 @@ const useOrderStore = create((set, get) => ({
   addOrder: async (order) => {
     set({ isLoading: true });
     try {
-      const response = await axiosInstance.post("/orders", order);
+      const response = await httpClient.post("/orders", order);
       set({ orders: [...get().orders, response.data], isLoading: false });
     } catch (error) {
       set({ error: error.message, isLoading: false });
@@ -27,7 +28,7 @@ const useOrderStore = create((set, get) => ({
   updateOrder: async (id, order) => {
     set({ isLoading: true });
     try {
-      const response = await axiosInstance.put(`/orders/${id}`, order);
+      const response = await httpClient.put(`/orders/${id}`, order);
       set({
         orders: get().orders.map((o) =>
           o.id === id ? { ...o, ...response.data } : o
@@ -41,7 +42,7 @@ const useOrderStore = create((set, get) => ({
   deleteOrder: async (id) => {
     set({ isLoading: true });
     try {
-      await axiosInstance.delete(`/orders/${id}`);
+      await httpClient.delete(`/orders/${id}`);
       set({
         orders: get().orders.filter((o) => o.id !== id),
         isLoading: false,

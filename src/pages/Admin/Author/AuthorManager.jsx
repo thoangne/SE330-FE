@@ -197,7 +197,7 @@ const AuthorManager = () => {
                 <th className="sortable" onClick={() => handleSort("id")}>
                   ID {getSortIcon("id")}
                 </th>
-                <th>Ảnh</th>
+                {/* <th>Ảnh</th> */}
                 <th className="sortable" onClick={() => handleSort("name")}>
                   Tên tác giả {getSortIcon("name")}
                 </th>
@@ -209,7 +209,7 @@ const AuthorManager = () => {
               {currentAuthors.map((a) => (
                 <tr key={a.id}>
                   <td>{a.id}</td>
-                  <td>
+                  {/* <td>
                     {a.avatar && (
                       <Image
                         src={a.avatar}
@@ -219,7 +219,7 @@ const AuthorManager = () => {
                         rounded
                       />
                     )}
-                  </td>
+                  </td> */}
                   <td>{a.name}</td>
                   <td className="text-truncate" style={{ maxWidth: 350 }}>
                     {a.bio}
@@ -262,10 +262,10 @@ const AuthorManager = () => {
         </Modal.Header>
         <Form onSubmit={handleAddSubmit}>
           <Modal.Body>
-            <Form.Group className="mb-3" controlId="avatar">
+            {/* <Form.Group className="mb-3" controlId="avatar">
               <Form.Label>URL hình ảnh</Form.Label>
               <Form.Control name="avatar" placeholder="https://" />
-            </Form.Group>
+            </Form.Group> */}
             <Form.Group className="mb-3" controlId="name">
               <Form.Label>Tên tác giả</Form.Label>
               <Form.Control name="name" required />
@@ -294,13 +294,13 @@ const AuthorManager = () => {
         {editingAuthor && (
           <Form onSubmit={handleEditSubmit}>
             <Modal.Body>
-              <Form.Group className="mb-3" controlId="avatarEdit">
+              {/* <Form.Group className="mb-3" controlId="avatarEdit">
                 <Form.Label>URL hình ảnh</Form.Label>
                 <Form.Control
                   name="avatar"
                   defaultValue={editingAuthor.avatar}
                 />
-              </Form.Group>
+              </Form.Group> */}
               <Form.Group className="mb-3" controlId="nameEdit">
                 <Form.Label>Tên tác giả</Form.Label>
                 <Form.Control

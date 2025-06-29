@@ -1,4 +1,5 @@
 import axiosInstance from "./../lib/axiosInstance";
+import httpClient from "../services/httpClient";
 import { create } from "zustand";
 
 const useUserStore = create((set, get) => ({
@@ -9,7 +10,7 @@ const useUserStore = create((set, get) => ({
   fetchUsers: async () => {
     set({ isLoading: true });
     try {
-      const response = await axiosInstance.get("/users");
+      const response = await httpClient.get("/users");
       set({ users: response.data, isLoading: false });
     } catch (error) {
       set({ error: error.message, isLoading: false });
@@ -18,7 +19,7 @@ const useUserStore = create((set, get) => ({
   addUser: async (user) => {
     set({ isLoading: true });
     try {
-      const response = await axiosInstance.post("/users", user);
+      const response = await httpClient.post("/users", user);
       set({ users: [...get().users, response.data], isLoading: false });
     } catch (error) {
       set({ error: error.message, isLoading: false });
@@ -27,7 +28,7 @@ const useUserStore = create((set, get) => ({
   updateUser: async (id, user) => {
     set({ isLoading: true });
     try {
-      const response = await axiosInstance.put(`/users/${id}`, user);
+      const response = await httpClient.put(`/users/${id}`, user);
       set({
         users: get().users.map((u) =>
           u.id === id ? { ...u, ...response.data } : u
@@ -41,7 +42,7 @@ const useUserStore = create((set, get) => ({
   deleteUser: async (id) => {
     set({ isLoading: true });
     try {
-      await axiosInstance.delete(`/users/${id}`);
+      await httpClient.delete(`/users/${id}`);
       set({
         users: get().users.filter((u) => u.id !== id),
         isLoading: false,

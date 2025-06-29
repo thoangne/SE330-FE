@@ -1,4 +1,5 @@
 import axiosInstance from "../lib/axiosInstance";
+import httpClient from "../services/httpClient";
 import { create } from "zustand";
 
 const useBookStore = create((set, get) => ({
@@ -18,7 +19,7 @@ const useBookStore = create((set, get) => ({
   addBook: async (book) => {
     set({ isLoading: true });
     try {
-      const response = await axiosInstance.post("/books", book);
+      const response = await httpClient.post("/products", book);
       set({ books: [...get().books, response.data], isLoading: false });
     } catch (error) {
       set({ error: error.message, isLoading: false });
@@ -27,7 +28,7 @@ const useBookStore = create((set, get) => ({
   updateBook: async (id, book) => {
     set({ isLoading: true });
     try {
-      const response = await axiosInstance.put(`/products/${id}`, book);
+      const response = await httpClient.patch(`/products/${id}`, book);
       set({
         books: get().books.map((b) =>
           b.id === id ? { ...b, ...response.data } : b
@@ -41,7 +42,7 @@ const useBookStore = create((set, get) => ({
   deleteBook: async (id) => {
     set({ isLoading: true });
     try {
-      await axiosInstance.delete(`/products/${id}`);
+      await httpClient.delete(`/products/${id}`);
       set({ books: get().books.filter((b) => b.id !== id), isLoading: false });
     } catch (error) {
       set({ error: error.message, isLoading: false });
