@@ -38,9 +38,8 @@ const AdminSidebar = ({ isCollapsed }) => {
 
       {/* Navigation */}
       <Nav
-        className={` border-top pt-3 flex-column px-3 ${
-          isCollapsed ? "align-content-center" : ""
-        }`}
+        className={` border-top pt-3 flex-column px-3 ${isCollapsed ? "align-content-center" : ""
+          }`}
         style={{ flexGrow: 1 }}
       >
         <Nav.Link as={Link} to="/admin" title="Bảng điều khiển">
@@ -57,6 +56,9 @@ const AdminSidebar = ({ isCollapsed }) => {
         </Nav.Link>
         <Nav.Link as={Link} to="/admin/orders" title="Quản lý đơn hàng">
           🛒 {isCollapsed ? "" : "Quản lý đơn hàng"}
+        </Nav.Link>
+        <Nav.Link as={Link} to="/admin/vouchers" title="Quản lý Voucher">
+          🎁 {isCollapsed ? "" : "Quản lý Voucher"}
         </Nav.Link>
         {/* Spacer to push logout down */}
         <div className="flex-grow-1"></div>
