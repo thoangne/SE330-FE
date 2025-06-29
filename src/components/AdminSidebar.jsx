@@ -60,6 +60,9 @@ const AdminSidebar = ({ isCollapsed }) => {
         <Nav.Link as={Link} to="/admin/vouchers" title="Quản lý Voucher">
           🎁 {isCollapsed ? "" : "Quản lý Voucher"}
         </Nav.Link>
+        <Nav.Link as={Link} to="/admin/promotions" title="Quản lý chương trình tích điểm">
+          💰 {isCollapsed ? "" : "Quản lý Tích điểm"}
+        </Nav.Link>
         {/* Spacer to push logout down */}
         <div className="flex-grow-1"></div>
         {/* Logout */}
