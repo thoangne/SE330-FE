@@ -1,4 +1,5 @@
 import httpClient from "./httpClient";
+import { formatDateTimeForAPI } from "../utils/dateUtils";
 
 /**
  * Service for user order operations
@@ -47,7 +48,7 @@ export const userOrderService = {
   formatOrderData(userId, cartItems, additionalData = {}) {
     return {
       userId,
-      orderDate: new Date().toISOString(),
+      orderDate: formatDateTimeForAPI(),
       status: "PENDING",
       items: cartItems.map((item) => ({
         productId: item.productId,
@@ -64,6 +65,46 @@ export const userOrderService = {
       return await this.createOrder(orderData);
     } catch (error) {
       console.error("Error creating order from cart:", error);
+      throw error;
+    }
+  },
+
+  // Update order status
+  async updateOrderStatus(orderId, status) {
+    try {
+      const response = await httpClient.patch(
+        `/orders/${orderId}/status`,
+        null,
+        {
+          params: { status },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error(
+        `Error updating order ${orderId} status to ${status}:`,
+        error
+      );
+      throw error;
+    }
+  },
+
+  // Cancel order
+  async cancelOrder(orderId) {
+    try {
+      return await this.updateOrderStatus(orderId, "CANCELLED");
+    } catch (error) {
+      console.error(`Error cancelling order ${orderId}:`, error);
+      throw error;
+    }
+  },
+
+  // Confirm order delivery
+  async confirmDelivery(orderId) {
+    try {
+      return await this.updateOrderStatus(orderId, "DELIVERED");
+    } catch (error) {
+      console.error(`Error confirming delivery for order ${orderId}:`, error);
       throw error;
     }
   },

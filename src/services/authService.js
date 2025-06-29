@@ -1,4 +1,5 @@
 import httpClient, { ENDPOINTS } from "./httpClient";
+import axiosInstance from "../lib/axiosInstance";
 
 export const login = async (email, password) => {
   try {
@@ -279,6 +280,185 @@ export const getUserById = async (userId) => {
       message:
         error.response?.data?.message ||
         "Có lỗi xảy ra khi lấy thông tin người dùng",
+    };
+  }
+};
+
+// Update user points
+export const updateUserPoints = async (userId, newPoints) => {
+  try {
+    console.log("🏆 AuthService: Updating user points:", { userId, newPoints });
+
+    const response = await axiosInstance.patch(`/users/${userId}`, {
+      point: newPoints,
+    });
+
+    const { data } = response;
+
+    if (data) {
+      console.log("🏆 AuthService: Points updated successfully:", data);
+      return {
+        success: true,
+        data: data,
+        message: "Cập nhật điểm thành công",
+      };
+    }
+
+    return {
+      success: false,
+      data: null,
+      message: "Cập nhật điểm thất bại",
+    };
+  } catch (error) {
+    console.error("🏆 AuthService: Error updating user points:", error);
+
+    const errorMessage =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      "Có lỗi xảy ra khi cập nhật điểm";
+
+    return {
+      success: false,
+      data: null,
+      message: errorMessage,
+    };
+  }
+};
+
+// Calculate points earned from order
+export const calculatePointsEarned = (orderTotal, tierMultiplier) => {
+  const basePoints = Math.floor(orderTotal); // 1 point per 1 VND
+  const earnedPoints = Math.floor(basePoints * tierMultiplier);
+  console.log("🏆 AuthService: Calculating points:", {
+    orderTotal,
+    tierMultiplier,
+    basePoints,
+    earnedPoints,
+  });
+  return earnedPoints;
+};
+
+// Add points to user account
+export const addPointsToUser = async (userId, orderTotal, tierMultiplier) => {
+  try {
+    console.log("🏆 AuthService: Adding points to user:", {
+      userId,
+      orderTotal,
+      tierMultiplier,
+    });
+
+    // Get current user points
+    const userResult = await getUserById(userId);
+    if (!userResult.success) {
+      throw new Error("Failed to get user data");
+    }
+
+    const currentPoints = userResult.data.point || userResult.data.points || 0;
+    const pointsToAdd = calculatePointsEarned(orderTotal, tierMultiplier);
+    const newTotalPoints = currentPoints + pointsToAdd;
+
+    console.log("🏆 AuthService: Points calculation:", {
+      currentPoints,
+      pointsToAdd,
+      newTotalPoints,
+    });
+
+    // Update user points
+    const updateResult = await updateUserPoints(userId, newTotalPoints);
+
+    if (updateResult.success) {
+      return {
+        success: true,
+        data: {
+          pointsAdded: pointsToAdd,
+          newTotal: newTotalPoints,
+          previousTotal: currentPoints,
+        },
+        message: `Đã cộng ${pointsToAdd} điểm vào tài khoản`,
+      };
+    }
+
+    return updateResult;
+  } catch (error) {
+    console.error("🏆 AuthService: Error adding points to user:", error);
+    return {
+      success: false,
+      data: null,
+      message: "Có lỗi xảy ra khi cộng điểm",
+    };
+  }
+};
+
+// Get user's current tier multiplier
+export const getUserTierMultiplier = async (userId) => {
+  try {
+    console.log("🏆 AuthService: Getting tier multiplier for user:", userId);
+
+    // Get user details to get their current points
+    const userResult = await getUserById(userId);
+    if (!userResult.success) {
+      throw new Error("Failed to get user data");
+    }
+
+    const userPoints = userResult.data.point || userResult.data.points || 0;
+    console.log("🏆 AuthService: User points:", userPoints);
+
+    // Import userPromotionService dynamically to avoid circular imports
+    const { userPromotionService } = await import("./userServices");
+    const tierResult = await userPromotionService.getUserTierMultiplier(
+      userPoints
+    );
+
+    if (tierResult.success) {
+      console.log(
+        "🏆 AuthService: Tier multiplier retrieved:",
+        tierResult.data
+      );
+      return {
+        success: true,
+        data: tierResult.data,
+        message: "Lấy thông tin hạng thành viên thành công",
+      };
+    }
+
+    return tierResult;
+  } catch (error) {
+    console.error("🏆 AuthService: Error getting tier multiplier:", error);
+    return {
+      success: false,
+      data: {
+        tierMultiplier: 1, // Default fallback
+        rank: "BRONZE",
+        pointsRequired: 0,
+        userPoints: 0,
+      },
+      message: "Không thể lấy thông tin hạng thành viên, sử dụng mặc định",
+    };
+  }
+};
+
+// Add points to user account with dynamic tier multiplier
+export const addPointsToUserWithTier = async (userId, orderTotal) => {
+  try {
+    console.log(
+      "🏆 AuthService: Adding points with tier calculation for user:",
+      userId
+    );
+
+    // Get user's current tier multiplier
+    const tierResult = await getUserTierMultiplier(userId);
+    const tierMultiplier = tierResult.data?.tierMultiplier || 1;
+
+    console.log("🏆 AuthService: Using tier multiplier:", tierMultiplier);
+
+    // Add points using the tier multiplier
+    return await addPointsToUser(userId, orderTotal, tierMultiplier);
+  } catch (error) {
+    console.error("🏆 AuthService: Error adding points with tier:", error);
+    return {
+      success: false,
+      data: null,
+      message: "Có lỗi xảy ra khi cộng điểm",
     };
   }
 };

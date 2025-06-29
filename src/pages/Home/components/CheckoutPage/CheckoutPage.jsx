@@ -6,12 +6,11 @@ import { useCartStore } from "../../../../stores/useCartStore";
 import { useAuthStore } from "../../../../stores/useAuthStore";
 import {
   userCartService,
-  userOrderService,
-  userPaymentService,
   userVoucherService,
   userPromotionService,
   userProductService,
 } from "../../../../services/userServices";
+import { orderProcessingService } from "../../../../services/orderProcessingService";
 import "./CheckoutPage.css";
 
 function CheckoutPage() {
@@ -279,61 +278,58 @@ function CheckoutPage() {
     setShowPaymentModal(true);
   };
 
-  // Helper function to format datetime for API
-  const formatDateTimeForAPI = () => {
-    const now = new Date();
-    // Format: YYYY-MM-DDTHH:MM (no seconds, no timezone)
-    return now.toISOString().slice(0, 16);
-  };
-
   const handleConfirmOrder = async () => {
     setProcessingPayment(true);
 
     try {
-      // Prepare order data according to API doc
+      console.log("🛒 CheckoutPage: Starting order processing");
+
+      // Prepare order data
       const orderItems = enrichedCartItems.map((item) => ({
         productId: item.product_id || item.id,
         quantity: item.quantity || item.qty || 1,
       }));
 
       const orderData = {
-        userId: user.id,
-        orderDate: formatDateTimeForAPI(), // Use the new helper function
-        status: "PENDING",
         items: orderItems,
       };
 
-      console.log("🛒 CheckoutPage: Creating order with data:", orderData);
-
-      // Create order
-      const orderResponse = await userOrderService.createOrder(orderData);
-      const orderId = orderResponse.data?.id || orderResponse.id;
-
-      console.log("🛒 CheckoutPage: Order created:", orderResponse);
-      toast.success("Đặt hàng thành công!");
-
-      // Prepare payment data according to API doc
+      // Prepare payment data
       const paymentData = {
-        orderid: orderId,
-        method: formData.payment === "COD" ? "Cash on Delivery" : "VNPAY",
-        status: "Pending",
-        paidAt: formatDateTimeForAPI(), // Use the new helper function
-        vouchercode: selectedVoucher?.code || null,
+        method: formData.payment === "COD" ? "COD" : "VNPAY",
+        voucherCode: selectedVoucher?.code || null,
         address: formData.address,
         phone: formData.phone,
         name: formData.name,
       };
 
-      console.log("🛒 CheckoutPage: Creating payment with data:", paymentData);
+      const userInfo = {
+        id: user.id,
+        name: user.name || user.fullName || user.full_name,
+        email: user.email,
+      };
 
-      const paymentResponse = await userPaymentService.createPayment(
-        paymentData
+      console.log("🛒 CheckoutPage: Processing order with:", {
+        orderData,
+        paymentData,
+        userInfo,
+      });
+
+      // Use the new order processing service
+      const result = await orderProcessingService.createOrderWithPayment(
+        orderData,
+        paymentData,
+        userInfo
       );
 
-      console.log("🛒 CheckoutPage: Payment created:", paymentResponse);
+      if (!result.success) {
+        throw new Error(result.message);
+      }
+
+      console.log("🛒 CheckoutPage: Order processed successfully:", result);
 
       if (formData.payment === "COD") {
-        // COD payment is successful immediately
+        // COD payment - order created with PENDING payment
         toast.success(
           "Đơn hàng đã được đặt thành công! Bạn sẽ thanh toán khi nhận hàng."
         );
@@ -342,17 +338,19 @@ function CheckoutPage() {
         clearCart();
         navigate("/profile", { state: { activeTab: "orders" } });
       } else if (formData.payment === "VNPAY") {
-        // Redirect to VNPay
-        if (paymentResponse.data.payment_url) {
-          window.location.href = paymentResponse.data.payment_url;
-        } else {
-          throw new Error("Không thể tạo liên kết thanh toán VNPay");
-        }
+        // For VNPAY, if there's a payment URL, redirect to it
+        // Otherwise, order is created with PAID status and points already added
+        toast.success("Đơn hàng đã được đặt và thanh toán thành công!");
+
+        // Clear cart and redirect
+        clearCart();
+        navigate("/profile", { state: { activeTab: "orders" } });
       }
     } catch (error) {
-      console.error("Error creating order:", error);
+      console.error("🛒 CheckoutPage: Error processing order:", error);
       toast.error(
-        error.response?.data?.message ||
+        error.message ||
+          error.response?.data?.message ||
           "Có lỗi khi đặt hàng. Vui lòng thử lại!"
       );
     } finally {

@@ -54,6 +54,111 @@ export const userPromotionService = {
     }
   },
 
+  // Get user's current tier multiplier based on their points
+  async getUserTierMultiplier(userPoints) {
+    try {
+      console.log(
+        "🏆 PromotionService: Getting tier multiplier for points:",
+        userPoints
+      );
+
+      const userRank = await this.getUserRankInfo(userPoints);
+      const tierMultiplier = userRank.tierMultiplier || 1;
+
+      console.log("🏆 PromotionService: User tier info:", {
+        rank: userRank.rank,
+        tierMultiplier,
+        pointsRequired: userRank.point,
+      });
+
+      return {
+        success: true,
+        data: {
+          rank: userRank.rank,
+          tierMultiplier,
+          pointsRequired: userRank.point,
+          userPoints,
+        },
+      };
+    } catch (error) {
+      console.error(
+        "🏆 PromotionService: Error getting tier multiplier:",
+        error
+      );
+      return {
+        success: false,
+        data: { tierMultiplier: 1 }, // Default multiplier
+        message: "Không thể lấy thông tin hạng thành viên, sử dụng mặc định",
+      };
+    }
+  },
+
+  // Get user's complete promotion/tier information
+  async getUserPromotionInfo(userPoints) {
+    try {
+      console.log(
+        "🏆 PromotionService: Getting complete promotion info for points:",
+        userPoints
+      );
+
+      const promotions = await this.getAllPromotions();
+      const sortedPromotions = promotions.sort((a, b) => a.point - b.point);
+
+      // Find current tier
+      let currentTier = sortedPromotions[0]; // Default to lowest tier
+      for (const promotion of sortedPromotions) {
+        if (userPoints >= promotion.point) {
+          currentTier = promotion;
+        } else {
+          break;
+        }
+      }
+
+      // Find next tier
+      const nextTier = sortedPromotions.find((p) => p.point > userPoints);
+
+      const result = {
+        currentTier: {
+          rank: currentTier.rank,
+          tierMultiplier: currentTier.tierMultiplier,
+          pointsRequired: currentTier.point,
+        },
+        nextTier: nextTier
+          ? {
+              rank: nextTier.rank,
+              tierMultiplier: nextTier.tierMultiplier,
+              pointsRequired: nextTier.point,
+              pointsNeeded: nextTier.point - userPoints,
+            }
+          : null,
+        userPoints,
+        allTiers: sortedPromotions,
+      };
+
+      console.log("🏆 PromotionService: Complete promotion info:", result);
+
+      return {
+        success: true,
+        data: result,
+      };
+    } catch (error) {
+      console.error(
+        "🏆 PromotionService: Error getting promotion info:",
+        error
+      );
+      return {
+        success: false,
+        data: {
+          currentTier: { rank: "BRONZE", tierMultiplier: 1, pointsRequired: 0 },
+          nextTier: null,
+          userPoints: userPoints || 0,
+          allTiers: [],
+        },
+        message: "Không thể lấy thông tin khuyến mãi",
+      };
+    }
+  },
+
   // Get tier multiplier for user
   async getTierMultiplier(userId) {
     try {

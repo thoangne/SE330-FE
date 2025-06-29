@@ -23,8 +23,15 @@ import {
   userVoucherService,
   userPromotionService,
 } from "../../../services/userServices";
-import { BsPersonFill, BsClockHistory, BsGift, BsStar } from "react-icons/bs";
+import {
+  BsPersonFill,
+  BsClockHistory,
+  BsGift,
+  BsStar,
+  BsEye,
+} from "react-icons/bs";
 import { toast } from "react-hot-toast";
+import OrderDetailModal from "./OrderDetailModal";
 import "./Profile.css";
 
 function Profile() {
@@ -41,6 +48,8 @@ function Profile() {
   const [activeTab, setActiveTab] = useState(
     location.state?.activeTab || "account"
   );
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showOrderDetail, setShowOrderDetail] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -224,6 +233,25 @@ function Profile() {
     } else if (tab === "vouchers" && userVouchers.length === 0) {
       loadUserVouchers();
     }
+  };
+
+  const handleViewOrderDetail = (order) => {
+    setSelectedOrder(order);
+    setShowOrderDetail(true);
+  };
+
+  const handleCloseOrderDetail = () => {
+    setShowOrderDetail(false);
+    setSelectedOrder(null);
+  };
+
+  const handleOrderUpdate = (updatedOrder) => {
+    // Update the order in local state
+    setOrders((prevOrders) =>
+      prevOrders.map((order) =>
+        order.id === updatedOrder.id ? updatedOrder : order
+      )
+    );
   };
 
   const getOrderStatusVariant = (status) => {
@@ -753,6 +781,18 @@ function Profile() {
                                         <BsGift /> Đã sử dụng voucher
                                       </small>
                                     )}
+                                    <div className="mt-2">
+                                      <Button
+                                        variant="outline-primary"
+                                        size="sm"
+                                        onClick={() =>
+                                          handleViewOrderDetail(order)
+                                        }
+                                      >
+                                        <BsEye className="me-1" />
+                                        Xem chi tiết
+                                      </Button>
+                                    </div>
                                   </Col>
                                 </Row>
                               </Card.Body>
@@ -834,6 +874,16 @@ function Profile() {
             </Card>
           </Col>
         </Row>
+
+        {/* Order Detail Modal */}
+        {selectedOrder && (
+          <OrderDetailModal
+            show={showOrderDetail}
+            onHide={handleCloseOrderDetail}
+            order={selectedOrder}
+            onOrderUpdate={handleOrderUpdate}
+          />
+        )}
       </Tab.Container>
     </Container>
   );
