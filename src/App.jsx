@@ -20,6 +20,7 @@ import Footer from "./components/Footer/Footer";
 // Layout
 import AdminLayout from "./components/AdminLayout";
 import BooksManager from "./pages/Admin/BooksManager/BooksManager";
+import VoucherManager from "./pages/Admin/Voucher/VoucherManager";
 import UsersManager from "./pages/Admin/UsersManger/UsersManager";
 import AuthorManager from "./pages/Admin/Author/AuthorManager";
 import OrdersManager from "./pages/Admin/Order/OrdersManager";
@@ -43,6 +44,7 @@ function App() {
               <Route path="users" element={<UsersManager />} />
               <Route path="authors" element={<AuthorManager />} />
               <Route path="orders" element={<OrdersManager />} />
+              <Route path="vouchers" element={<VoucherManager />} />
               <Route path="*" element={<NotFoundPage />} />
             </Route>
           </Routes>
