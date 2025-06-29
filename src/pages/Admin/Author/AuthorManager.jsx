@@ -81,8 +81,6 @@ const AuthorManager = () => {
     e.preventDefault();
     const form = e.target;
     const newAuthor = {
-      id: Date.now(),
-      avatar: form.avatar.value,
       name: form.name.value,
       bio: form.bio.value,
     };
@@ -95,11 +93,11 @@ const AuthorManager = () => {
     const form = e.target;
     const updatedAuthor = {
       ...editingAuthor,
-      avatar: form.avatar.value,
       name: form.name.value,
       bio: form.bio.value,
     };
-    updateAuthor(updatedAuthor);
+    console.log(updatedAuthor)
+    updateAuthor(editingAuthor.id, updatedAuthor);
     setShowEdit(false);
   };
 
