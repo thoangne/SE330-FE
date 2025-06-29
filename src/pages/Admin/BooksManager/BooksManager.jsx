@@ -112,15 +112,16 @@ const BooksManager = () => {
     const newBook = {
       coverImage: form.image.value,
       description: form.description.value,
-      discount: form.discount.value,
-      price: form.price.value,
-      slug: form.name.value,
+      discount: parseFloat(form.discount.value),
+      price: parseFloat(form.price.value),
+      slug: form.slug.value,
       stock: parseInt(form.quantity.value, 10),
       title: form.name.value,
-      publisherId: parseInt(form.publisher.value, 10),
+      publisherId: form.publisher.value ? parseInt(form.publisher.value, 10) : null,
       categoryId: parseInt(form.category.value, 10),
-      authorIds: selectedAuthors.map((a) => a.value)
+      authorIds: selectedAuthors?.map((a) => a.value) || [],
     };
+    console.log(newBook);
     addBook(newBook);
     setShowAdd(false);
   };
@@ -135,6 +136,10 @@ const BooksManager = () => {
       stock: parseInt(form.quantity.value, 10),
       description: form.description.value,
       discount: parseInt(form.discount.value, 10),
+      price: form.price.value,
+      publisherId: parseInt(form.publisher.value, 10),
+      categoryId: parseInt(form.category.value, 10),
+      authorIds: selectedAuthors?.map((a) => a.value) || [],
     };
     console.log(updated);
     updateBook(editingBook.id, updated);
@@ -331,6 +336,18 @@ const BooksManager = () => {
               </Form.Group>
             </Row>
 
+            <Row className="mb-3">
+              <Form.Group as={Col} controlId="slug">
+                <Form.Label>Slug</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="slug"
+                  placeholder="Nhập URL sản phẩm"
+                  required
+                />
+              </Form.Group>
+            </Row>
+
             {/* Tên sách */}
             <Row className="mb-3">
               <Form.Group as={Col} controlId="name">
@@ -375,9 +392,9 @@ const BooksManager = () => {
             </Row>
 
             <Row className="mb-3">
-              <Form.Group as={Col} controlId="publisher">
+              <Form.Group as={Col} controlId="publisher" required>
                 <Form.Label>Nhà xuất bản</Form.Label>
-                <Form.Select name="publisher" required>
+                <Form.Select name="publisher">
                   <option value="">-- Chọn NXB --</option>
                   {publishers.map((pub) => (
                     <option key={pub.id} value={pub.id}>
