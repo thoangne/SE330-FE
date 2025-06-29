@@ -6,18 +6,18 @@ import { useCartStore } from "../../../../stores/useCartStore";
 import { useAuthStore } from "../../../../stores/useAuthStore";
 import {
   userCartService,
-  userOrderService,
-  userPaymentService,
   userVoucherService,
   userPromotionService,
   userProductService,
 } from "../../../../services/userServices";
+import { orderProcessingService } from "../../../../services/orderProcessingService";
+import { getUserById } from "../../../../services/authService";
 import "./CheckoutPage.css";
 
 function CheckoutPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, updateUser } = useAuthStore();
   const { clearCart, cartItems, initializeCart } = useCartStore();
 
   const [loading, setLoading] = useState(false);
@@ -279,61 +279,73 @@ function CheckoutPage() {
     setShowPaymentModal(true);
   };
 
-  // Helper function to format datetime for API
-  const formatDateTimeForAPI = () => {
-    const now = new Date();
-    // Format: YYYY-MM-DDTHH:MM (no seconds, no timezone)
-    return now.toISOString().slice(0, 16);
-  };
-
   const handleConfirmOrder = async () => {
     setProcessingPayment(true);
 
     try {
-      // Prepare order data according to API doc
+      console.log("🛒 CheckoutPage: Starting order processing");
+
+      // Prepare order data
       const orderItems = enrichedCartItems.map((item) => ({
         productId: item.product_id || item.id,
         quantity: item.quantity || item.qty || 1,
       }));
 
       const orderData = {
-        userId: user.id,
-        orderDate: formatDateTimeForAPI(), // Use the new helper function
-        status: "PENDING",
         items: orderItems,
       };
 
-      console.log("🛒 CheckoutPage: Creating order with data:", orderData);
-
-      // Create order
-      const orderResponse = await userOrderService.createOrder(orderData);
-      const orderId = orderResponse.data?.id || orderResponse.id;
-
-      console.log("🛒 CheckoutPage: Order created:", orderResponse);
-      toast.success("Đặt hàng thành công!");
-
-      // Prepare payment data according to API doc
+      // Prepare payment data
       const paymentData = {
-        orderid: orderId,
-        method: formData.payment === "COD" ? "Cash on Delivery" : "VNPAY",
-        status: "Pending",
-        paidAt: formatDateTimeForAPI(), // Use the new helper function
-        vouchercode: selectedVoucher?.code || null,
+        method: formData.payment === "COD" ? "COD" : "VNPAY",
+        voucherCode: selectedVoucher?.code || null,
         address: formData.address,
         phone: formData.phone,
         name: formData.name,
       };
 
-      console.log("🛒 CheckoutPage: Creating payment with data:", paymentData);
+      const userInfo = {
+        id: user.id,
+        name: user.name || user.fullName || user.full_name,
+        email: user.email,
+      };
 
-      const paymentResponse = await userPaymentService.createPayment(
-        paymentData
+      console.log("🛒 CheckoutPage: Processing order with:", {
+        orderData,
+        paymentData,
+        userInfo,
+      });
+
+      // Use the new order processing service
+      const result = await orderProcessingService.createOrderWithPayment(
+        orderData,
+        paymentData,
+        userInfo
       );
 
-      console.log("🛒 CheckoutPage: Payment created:", paymentResponse);
+      if (!result.success) {
+        throw new Error(result.message);
+      }
+
+      console.log("🛒 CheckoutPage: Order processed successfully:", result);
+
+      // Refresh user data to get updated points (for non-COD payments)
+      if (formData.payment !== "COD") {
+        try {
+          const freshUserResult = await getUserById(user.id);
+          if (freshUserResult.success && freshUserResult.data) {
+            updateUser(freshUserResult.data);
+            console.log(
+              "🔄 CheckoutPage: User data refreshed with updated points"
+            );
+          }
+        } catch (error) {
+          console.warn("🔄 CheckoutPage: Failed to refresh user data:", error);
+        }
+      }
 
       if (formData.payment === "COD") {
-        // COD payment is successful immediately
+        // COD payment - order created with PENDING payment
         toast.success(
           "Đơn hàng đã được đặt thành công! Bạn sẽ thanh toán khi nhận hàng."
         );
@@ -342,17 +354,19 @@ function CheckoutPage() {
         clearCart();
         navigate("/profile", { state: { activeTab: "orders" } });
       } else if (formData.payment === "VNPAY") {
-        // Redirect to VNPay
-        if (paymentResponse.data.payment_url) {
-          window.location.href = paymentResponse.data.payment_url;
-        } else {
-          throw new Error("Không thể tạo liên kết thanh toán VNPay");
-        }
+        // For VNPAY, if there's a payment URL, redirect to it
+        // Otherwise, order is created with PAID status and points already added
+        toast.success("Đơn hàng đã được đặt và thanh toán thành công!");
+
+        // Clear cart and redirect
+        clearCart();
+        navigate("/profile", { state: { activeTab: "orders" } });
       }
     } catch (error) {
-      console.error("Error creating order:", error);
+      console.error("🛒 CheckoutPage: Error processing order:", error);
       toast.error(
-        error.response?.data?.message ||
+        error.message ||
+          error.response?.data?.message ||
           "Có lỗi khi đặt hàng. Vui lòng thử lại!"
       );
     } finally {
@@ -420,15 +434,13 @@ function CheckoutPage() {
     const subtotal = calculateSubtotal();
 
     // Handle percentage discount type
-    if (selectedVoucher.discountType === "percentage") {
+    if (
+      selectedVoucher.discountType === "percent" ||
+      selectedVoucher.discountType === "percentage"
+    ) {
       const percentageDiscount = (subtotal * selectedVoucher.value) / 100;
-      // Apply maxDiscount limit if exists (from API field names)
-      return Math.min(
-        percentageDiscount,
-        selectedVoucher.maxDiscount ||
-          selectedVoucher.max_discount_amount ||
-          Infinity
-      );
+      // For percentage vouchers, maxUsage is the maximum discount amount
+      return Math.min(percentageDiscount, selectedVoucher.maxUsage || Infinity);
     }
     // Handle fixed discount type (giảm thẳng số tiền)
     else if (selectedVoucher.discountType === "fixed") {
@@ -655,7 +667,7 @@ function CheckoutPage() {
                         <small>{selectedVoucher.description}</small>
                         <br />
                         <small>
-                          Giảm:{" "}
+                          Giảm:
                           {userVoucherService?.formatVoucherDiscount
                             ? userVoucherService.formatVoucherDiscount(
                                 selectedVoucher
@@ -701,7 +713,7 @@ function CheckoutPage() {
                       <option value="">Chọn voucher khuyến mãi</option>
                       {availableVouchers.map((voucher) => (
                         <option key={voucher.id} value={voucher.id}>
-                          {voucher.code} -{" "}
+                          {voucher.code} -
                           {userVoucherService?.formatVoucherDiscount
                             ? userVoucherService.formatVoucherDiscount(voucher)
                             : voucher.discountType === "percentage"
@@ -767,7 +779,7 @@ function CheckoutPage() {
                       {item.product?.title || "Sản phẩm"}
                     </div>
                     <div className="item-quantity">
-                      Số lượng: {item.quantity} ×{" "}
+                      Số lượng: {item.quantity} ×
                       {(
                         item.product?.discount_price ||
                         item.product?.price ||

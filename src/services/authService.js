@@ -47,6 +47,46 @@ export const login = async (email, password) => {
   }
 };
 
+export const register = async (email) => {
+  try {
+    const response = await httpClient.post(ENDPOINTS.REGISTER, {
+      email,
+    });
+
+    const { data } = response;
+
+    // Check for successful response (201 Created)
+    if (response.status === 201 || data.success) {
+      return {
+        success: true,
+        data: data,
+        message:
+          data.message ||
+          "Đăng ký thành công! Vui lòng kiểm tra email để nhận thông tin đăng nhập.",
+      };
+    }
+
+    return {
+      success: false,
+      data: null,
+      message: data.message || "Đăng ký thất bại",
+    };
+  } catch (error) {
+    console.error("Register error:", error);
+
+    const errorMessage =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      "Có lỗi xảy ra khi đăng ký";
+
+    return {
+      success: false,
+      data: null,
+      message: errorMessage,
+    };
+  }
+};
+
 export const logout = async () => {
   try {
     // Call logout endpoint to invalidate refresh token on server
@@ -171,34 +211,6 @@ export const resetPassword = async (token, newPassword, confirmPassword) => {
   }
 };
 
-export const getUserInfo = async () => {
-  try {
-    const response = await httpClient.get(ENDPOINTS.USER_INFO);
-
-    if (response.data && response.status === 200) {
-      return {
-        success: true,
-        data: response.data,
-        message: "Lấy thông tin user thành công",
-      };
-    }
-
-    return {
-      success: false,
-      data: null,
-      message: response.data?.message || "Lấy thông tin user thất bại",
-    };
-  } catch (error) {
-    console.error("Get user info error:", error);
-    return {
-      success: false,
-      data: null,
-      message:
-        error.response?.data?.message || "Có lỗi xảy ra khi lấy thông tin user",
-    };
-  }
-};
-
 export const updateUserInfo = async (userData, userId) => {
   try {
     // Use userId from parameter or get from stored user data
@@ -212,10 +224,11 @@ export const updateUserInfo = async (userData, userId) => {
       };
     }
 
-    const response = await httpClient.put(
-      `${ENDPOINTS.USERS_UPDATE}/${userIdToUse}`,
+    console.log(
+      "🔍 UpdateUserInfo: Calling PATCH /users/" + userIdToUse,
       userData
     );
+    const response = await httpClient.patch(`/users/${userIdToUse}`, userData);
 
     if (response.data && response.status === 200) {
       return {
@@ -270,14 +283,193 @@ export const getUserById = async (userId) => {
   }
 };
 
+// Update user points
+export const updateUserPoints = async (userId, newPoints) => {
+  try {
+    console.log("🏆 AuthService: Updating user points:", { userId, newPoints });
+
+    const response = await httpClient.patch(`/users/${userId}`, {
+      point: newPoints,
+    });
+
+    const { data } = response;
+
+    if (data) {
+      console.log("🏆 AuthService: Points updated successfully:", data);
+      return {
+        success: true,
+        data: data,
+        message: "Cập nhật điểm thành công",
+      };
+    }
+
+    return {
+      success: false,
+      data: null,
+      message: "Cập nhật điểm thất bại",
+    };
+  } catch (error) {
+    console.error("🏆 AuthService: Error updating user points:", error);
+
+    const errorMessage =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      "Có lỗi xảy ra khi cập nhật điểm";
+
+    return {
+      success: false,
+      data: null,
+      message: errorMessage,
+    };
+  }
+};
+
+// Calculate points earned from order
+export const calculatePointsEarned = (orderTotal, tierMultiplier) => {
+  const basePoints = Math.floor(orderTotal); // 1 point per 1 VND
+  const earnedPoints = Math.floor(basePoints * tierMultiplier);
+  console.log("🏆 AuthService: Calculating points:", {
+    orderTotal,
+    tierMultiplier,
+    basePoints,
+    earnedPoints,
+  });
+  return earnedPoints;
+};
+
+// Add points to user account
+export const addPointsToUser = async (userId, orderTotal, tierMultiplier) => {
+  try {
+    console.log("🏆 AuthService: Adding points to user:", {
+      userId,
+      orderTotal,
+      tierMultiplier,
+    });
+
+    // Get current user points
+    const userResult = await getUserById(userId);
+    if (!userResult.success) {
+      throw new Error("Failed to get user data");
+    }
+
+    const currentPoints = userResult.data.point || userResult.data.points || 0;
+    const pointsToAdd = calculatePointsEarned(orderTotal, tierMultiplier);
+    const newTotalPoints = currentPoints + pointsToAdd;
+
+    console.log("🏆 AuthService: Points calculation:", {
+      currentPoints,
+      pointsToAdd,
+      newTotalPoints,
+    });
+
+    // Update user points
+    const updateResult = await updateUserPoints(userId, newTotalPoints);
+
+    if (updateResult.success) {
+      return {
+        success: true,
+        data: {
+          pointsAdded: pointsToAdd,
+          newTotal: newTotalPoints,
+          previousTotal: currentPoints,
+        },
+        message: `Đã cộng ${pointsToAdd} điểm vào tài khoản`,
+      };
+    }
+
+    return updateResult;
+  } catch (error) {
+    console.error("🏆 AuthService: Error adding points to user:", error);
+    return {
+      success: false,
+      data: null,
+      message: "Có lỗi xảy ra khi cộng điểm",
+    };
+  }
+};
+
+// Get user's current tier multiplier
+export const getUserTierMultiplier = async (userId) => {
+  try {
+    console.log("🏆 AuthService: Getting tier multiplier for user:", userId);
+
+    // Get user details to get their current points
+    const userResult = await getUserById(userId);
+    if (!userResult.success) {
+      throw new Error("Failed to get user data");
+    }
+
+    const userPoints = userResult.data.point || userResult.data.points || 0;
+    console.log("🏆 AuthService: User points:", userPoints);
+
+    // Import userPromotionService dynamically to avoid circular imports
+    const { userPromotionService } = await import("./userServices");
+    const tierResult = await userPromotionService.getUserTierMultiplier(
+      userPoints
+    );
+
+    if (tierResult.success) {
+      console.log(
+        "🏆 AuthService: Tier multiplier retrieved:",
+        tierResult.data
+      );
+      return {
+        success: true,
+        data: tierResult.data,
+        message: "Lấy thông tin hạng thành viên thành công",
+      };
+    }
+
+    return tierResult;
+  } catch (error) {
+    console.error("🏆 AuthService: Error getting tier multiplier:", error);
+    return {
+      success: false,
+      data: {
+        tierMultiplier: 1, // Default fallback
+        rank: "BRONZE",
+        pointsRequired: 0,
+        userPoints: 0,
+      },
+      message: "Không thể lấy thông tin hạng thành viên, sử dụng mặc định",
+    };
+  }
+};
+
+// Add points to user account with dynamic tier multiplier
+export const addPointsToUserWithTier = async (userId, orderTotal) => {
+  try {
+    console.log(
+      "🏆 AuthService: Adding points with tier calculation for user:",
+      userId
+    );
+
+    // Get user's current tier multiplier
+    const tierResult = await getUserTierMultiplier(userId);
+    const tierMultiplier = tierResult.data?.tierMultiplier || 1;
+
+    console.log("🏆 AuthService: Using tier multiplier:", tierMultiplier);
+
+    // Add points using the tier multiplier
+    return await addPointsToUser(userId, orderTotal, tierMultiplier);
+  } catch (error) {
+    console.error("🏆 AuthService: Error adding points with tier:", error);
+    return {
+      success: false,
+      data: null,
+      message: "Có lỗi xảy ra khi cộng điểm",
+    };
+  }
+};
+
 const authService = {
   login,
   logout,
   forgotPassword,
   resetPassword,
-  getUserInfo,
   updateUserInfo,
   getUserById,
+  register,
 };
 
 export default authService;

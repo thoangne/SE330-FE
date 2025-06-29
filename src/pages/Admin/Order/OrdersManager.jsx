@@ -28,7 +28,7 @@ const OrdersManager = () => {
     fetchOrders,
     orders,
     addOrder,
-    updateOrder,
+    updateOrderStatus,
     deleteOrder,
     isLoading,
     error,
@@ -48,8 +48,26 @@ const OrdersManager = () => {
   const [editingOrder, setEditingOrder] = useState(null);
 
   const handleSearch = (e) => {
-    // setSearchTerm(e.target.value);
-    // setCurrentPage(1);
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleQuickStatusUpdate = async (orderId, newStatus) => {
+    try {
+      const result = await updateOrderStatus(orderId, newStatus);
+      if (result.success) {
+        console.log(`✅ Order ${orderId} status updated to ${newStatus}`);
+      } else {
+        console.error(
+          `❌ Failed to update order ${orderId} status:`,
+          result.error
+        );
+        alert(`Lỗi cập nhật trạng thái: ${result.error}`);
+      }
+    } catch (error) {
+      console.error("Error updating order status:", error);
+      alert("Có lỗi xảy ra khi cập nhật trạng thái đơn hàng");
+    }
   };
 
   const handleSort = (key) => {
@@ -83,18 +101,31 @@ const OrdersManager = () => {
     setShowAdd(false);
   };
 
-  const handleEditSubmit = (e) => {
+  const handleEditSubmit = async (e) => {
     e.preventDefault();
     const form = e.target;
-    const updated = {
-      ...editingOrder,
-      userName: form.userName.value,
-      status: form.status.value,
-      totalAmount: Number(form.totalAmount.value),
-      payment: form.payment.value,
-      address: form.address.value,
-    };
-    updateOrder(updated);
+    const newStatus = form.status.value;
+
+    // Only update status since that's the only endpoint available
+    if (newStatus !== editingOrder.status) {
+      try {
+        const result = await updateOrderStatus(editingOrder.id, newStatus);
+        if (!result.success) {
+          alert(`Lỗi cập nhật trạng thái: ${result.error}`);
+          return;
+        }
+      } catch (error) {
+        console.error("Error updating order status:", error);
+        alert("Có lỗi xảy ra khi cập nhật trạng thái đơn hàng");
+        return;
+      }
+    } else {
+      // If status hasn't changed, show message
+      alert(
+        "Chỉ có thể cập nhật trạng thái đơn hàng. Các thông tin khác không thể thay đổi."
+      );
+    }
+
     setShowEdit(false);
   };
 
@@ -106,10 +137,9 @@ const OrdersManager = () => {
 
   const filtered = useMemo(
     () =>
-      orders.filter(
-        (o) =>
-          // o.userId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          o?.status.toLowerCase().includes(searchTerm.toLowerCase())
+      orders.filter((o) =>
+        // o.userId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        o?.status.toLowerCase().includes(searchTerm.toLowerCase())
       ),
     [orders, searchTerm]
   );
@@ -207,7 +237,22 @@ const OrdersManager = () => {
                     <tr key={o.id}>
                       <td>{o.id}</td>
                       <td>{o.userName}</td>
-                      <td>{o.status}</td>
+                      <td>
+                        <Form.Select
+                          size="sm"
+                          value={o.status}
+                          onChange={(e) =>
+                            handleQuickStatusUpdate(o.id, e.target.value)
+                          }
+                          style={{ minWidth: "140px" }}
+                        >
+                          <option value="PENDING">Chờ xử lý</option>
+                          <option value="CONFIRMED">Đã xác nhận</option>
+                          <option value="SHIPPING">Đang giao hàng</option>
+                          <option value="DELIVERED">Đã giao</option>
+                          <option value="CANCELLED">Đã hủy</option>
+                        </Form.Select>
+                      </td>
                       <td>{o.totalAmount.toLocaleString()}₫</td>
                       <td>{o.payment}</td>
                       <td className="text-truncate" style={{ maxWidth: 180 }}>
@@ -309,8 +354,12 @@ const OrdersManager = () => {
                 <Form.Control
                   name="userName"
                   defaultValue={editingOrder.userName}
-                  required
+                  disabled
+                  style={{ backgroundColor: "#f8f9fa" }}
                 />
+                <Form.Text className="text-muted">
+                  Không thể chỉnh sửa thông tin khách hàng
+                </Form.Text>
               </Form.Group>
               <Form.Group className="mb-3">
                 <Form.Label>Trạng thái</Form.Label>
@@ -321,6 +370,9 @@ const OrdersManager = () => {
                   <option value="DELIVERED">Đã giao</option>
                   <option value="CANCELLED">Đã hủy</option>
                 </Form.Select>
+                <Form.Text className="text-success">
+                  Chỉ có thể cập nhật trạng thái đơn hàng
+                </Form.Text>
               </Form.Group>
               <Form.Group className="mb-3">
                 <Form.Label>Tổng tiền</Form.Label>
@@ -328,23 +380,40 @@ const OrdersManager = () => {
                   type="number"
                   name="totalAmount"
                   defaultValue={editingOrder.totalAmount}
-                  required
+                  disabled
+                  style={{ backgroundColor: "#f8f9fa" }}
                 />
+                <Form.Text className="text-muted">
+                  Không thể chỉnh sửa tổng tiền
+                </Form.Text>
               </Form.Group>
               <Form.Group className="mb-3">
                 <Form.Label>Phương thức thanh toán</Form.Label>
-                <Form.Select name="payment" defaultValue={editingOrder.payment}>
+                <Form.Select
+                  name="payment"
+                  defaultValue={editingOrder.payment}
+                  disabled
+                  style={{ backgroundColor: "#f8f9fa" }}
+                >
                   <option value="COD">Thanh toán khi nhận</option>
                   <option value="BANK">Chuyển khoản</option>
                   <option value="CARD">Thẻ tín dụng</option>
                 </Form.Select>
+                <Form.Text className="text-muted">
+                  Không thể chỉnh sửa phương thức thanh toán
+                </Form.Text>
               </Form.Group>
               <Form.Group className="mb-3">
                 <Form.Label>Địa chỉ giao hàng</Form.Label>
                 <Form.Control
                   name="address"
                   defaultValue={editingOrder.address}
+                  disabled
+                  style={{ backgroundColor: "#f8f9fa" }}
                 />
+                <Form.Text className="text-muted">
+                  Không thể chỉnh sửa địa chỉ giao hàng
+                </Form.Text>
               </Form.Group>
             </Modal.Body>
             <Modal.Footer>

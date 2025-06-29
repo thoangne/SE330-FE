@@ -136,3 +136,49 @@
     transform: translateY(0);
   }
 }
+
+/* Rank Badge and Progress Bar dynamic styling */
+.rank-badge {
+  color: white !important;
+  border: none !important;
+}
+
+.rank-bronze .rank-badge {
+  background-color: #cd7f32 !important;
+}
+
+.rank-silver .rank-badge {
+  background-color: #c0c0c0 !important;
+}
+
+.rank-gold .rank-badge {
+  background-color: #ffd700 !important;
+}
+
+.rank-platinum .rank-badge {
+  background-color: #17a2b8 !important;
+}
+
+.rank-diamond .rank-badge {
+  background-color: #007bff !important;
+}
+
+.rank-bronze .progress-bar {
+  background-color: #cd7f32 !important;
+}
+
+.rank-silver .progress-bar {
+  background-color: #c0c0c0 !important;
+}
+
+.rank-gold .progress-bar {
+  background-color: #ffd700 !important;
+}
+
+.rank-platinum .progress-bar {
+  background-color: #17a2b8 !important;
+}
+
+.rank-diamond .progress-bar {
+  background-color: #007bff !important;
+}

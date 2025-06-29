@@ -1,4 +1,5 @@
 import httpClient from "./httpClient";
+import { formatDateTimeForAPI } from "../utils/dateUtils";
 
 /**
  * Service for user payment operations
@@ -28,7 +29,21 @@ export const userPaymentService = {
     }
   },
 
-  // Get payments by order ID
+  // Get payment detail by order ID
+  async getPaymentDetailByOrderId(orderId) {
+    try {
+      const response = await httpClient.get(`/payments/order/${orderId}`);
+      return response.data;
+    } catch (error) {
+      console.error(
+        `Error fetching payment detail for order ${orderId}:`,
+        error
+      );
+      throw error;
+    }
+  },
+
+  // Get payments by order ID (deprecated - use getPaymentDetailByOrderId)
   async getPaymentsByOrderId(orderId) {
     try {
       const response = await httpClient.get(`/user/payments/order/${orderId}`);
@@ -43,7 +58,7 @@ export const userPaymentService = {
   async updatePayment(paymentId, updateData) {
     try {
       const response = await httpClient.patch(
-        `/user/payments/${paymentId}`,
+        `/payments/${paymentId}`,
         updateData
       );
       return response.data;
@@ -70,7 +85,7 @@ export const userPaymentService = {
       orderid: orderId,
       method,
       status: "Pending",
-      paidAt: new Date().toISOString(),
+      paidAt: formatDateTimeForAPI(),
       vouchercode: voucherCode,
       address: customerInfo.address,
       phone: customerInfo.phone,
@@ -104,7 +119,7 @@ export const userPaymentService = {
     try {
       const updateData = {
         status: "PAID",
-        paymentDate: new Date().toISOString(),
+        paymentDate: formatDateTimeForAPI(),
       };
       return await this.updatePayment(paymentId, updateData);
     } catch (error) {
