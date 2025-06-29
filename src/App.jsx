@@ -20,8 +20,10 @@ import Footer from "./components/Footer/Footer";
 // Layout
 import AdminLayout from "./components/AdminLayout";
 import BooksManager from "./pages/Admin/BooksManager/BooksManager";
+import VoucherManager from "./pages/Admin/Voucher/VoucherManager";
 import UsersManager from "./pages/Admin/UsersManger/UsersManager";
 import AuthorManager from "./pages/Admin/Author/AuthorManager";
+import PromotionManager from "./pages/Admin/Promotion/PromotionManager";
 import OrdersManager from "./pages/Admin/Order/OrdersManager";
 import NotFoundPage from "./pages/NotFoundPage/NotFoundPage";
 import ProductDetail from "./pages/Home/components/ProductDetail/ProductDetail";
@@ -43,6 +45,8 @@ function App() {
               <Route path="users" element={<UsersManager />} />
               <Route path="authors" element={<AuthorManager />} />
               <Route path="orders" element={<OrdersManager />} />
+              <Route path="vouchers" element={<VoucherManager />} />
+              <Route path="promotions" element={<PromotionManager />} />
               <Route path="*" element={<NotFoundPage />} />
             </Route>
           </Routes>
